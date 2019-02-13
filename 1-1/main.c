@@ -37,7 +37,7 @@ char readStudent(FILE *file, struct Student *student);
 unsigned long fwriteString(FILE *file, char *string);
 void freadString(FILE *file, char *str, unsigned int maxLength);
 int menu_view(doublelinkedlist_t* students);
-int menu_twosForAtLeast1Exam(char *fileName);
+int menu_twosForAtLeast1Exam(doublelinkedlist_t* students);
 int menu_deleteExamResult(char *fileName);
 int menu_twosForEveryDiscipline(char *fileName);
 int menu_editExamResult(char *fileName);
@@ -335,7 +335,7 @@ int fileViewMenu(char *fileName) {
 
             /* get students, that have 2-s for at least 1 exam */
 
-            return menu_twosForAtLeast1Exam(fileName);
+            return menu_twosForAtLeast1Exam(&students);
 
         case 7:
 
@@ -689,10 +689,13 @@ int menu_view(doublelinkedlist_t* students) {
             case 1:
                 /* scroll up */
 
-                while (startingFrom->previous != NULL) {
+                i = 0;
+                while (i < ROWS_PER_PAGE && startingFrom->previous != NULL) {
 
                     startingFrom = startingFrom->previous;
                     offset--;
+
+                    i++;
 
                 }
 
@@ -750,74 +753,53 @@ int menu_view(doublelinkedlist_t* students) {
 
 }
 
-int menu_twosForAtLeast1Exam(char *fileName) {
+int menu_twosForAtLeast1Exam(doublelinkedlist_t* students) {
 
-    FILE *file;
+    doublelinkedlist_node_t* startingFrom = students->firstNode;
 
-    if ((file = fopen(fileName, "rb")) == NULL) {
+    if (startingFrom == NULL) {
 
-        system("CLS");
-
-        if (RU) perror("Ошибка при открытии файла на чтение");
-        else perror("An error occurred while trying to open the file for reading");
+        if (RU) puts("Файл пустой.");
+        else puts("File empty, nothing to view.");
 
         return 1;
 
     }
 
-    fseek(file, 0, SEEK_SET);
-
-    long int offset = 0, i, currentOffset;
-    int scroll;
-    struct Student student;
-    char hasNextPage;
+    doublelinkedlist_node_t* current;
+    int i, offset = 0;
 
     while (1) {
 
         system("CLS");
-
-        fseek(file, offset * STUDENT_COMPONENT_LENGTH, SEEK_SET);
-
-        if (!readStudent(file, &student)) {
-
-            if (RU) puts("Файл пустой.");
-            else puts("File empty, nothing to view.");
-
-            break;
-
-        }
+        current = startingFrom;
 
         tableTop();
 
+        bool atTheEnd = false;
+
         i = 0;
-
-        currentOffset = offset;
-
-        hasNextPage = 1;
-
         while (i < ROWS_PER_PAGE) {
 
-            fseek(file, (currentOffset + i) * STUDENT_COMPONENT_LENGTH, SEEK_SET);
+            /*printf("Student last name: ");
+            puts(stud->name);
+            printf("Physics mark: %d\n", stud->marks[0]);
+            printf("Math mark: %d\n", stud->marks[1]);
+            printf("Informatics mark: %d\n", stud->marks[2]);*/
 
-            if (!readStudent(file, &student)) {
+            student_t* currentStudent = (student_t*)dll_nodePayload(students, current);
 
-                fseek(file, (currentOffset + i) * STUDENT_COMPONENT_LENGTH, SEEK_SET);
-
-                hasNextPage = 0;
-
-                break;
-
-            }
-
-            if (student.marks[0] == MARK_TWO || student.marks[1] == MARK_TWO || student.marks[2] == MARK_TWO) {
-
-                tableStudent(i + currentOffset, &student);
-
+            if (currentStudent->marks[0] == MARK_TWO || currentStudent->marks[1] == MARK_TWO || currentStudent->marks[2] == MARK_TWO) {
+                tableStudent(i + offset, currentStudent);
                 i++;
-
             }
 
-            currentOffset++;
+            if (current->next == NULL) {
+                atTheEnd = true;
+                break;
+            }
+
+            current = current->next;
 
         }
 
@@ -840,61 +822,52 @@ int menu_twosForAtLeast1Exam(char *fileName) {
 
         }
 
-        scanf("%d", &scroll);
+        int choise;
+        scanf("%d", &choise);
 
         getchar();
 
-        switch (scroll) {
+        switch (choise) {
 
             case 1:
                 /* scroll up */
 
-                /*offset -= ROWS_PER_PAGE;
-                if (offset < 0) offset = 0;*/
                 i = 0;
+                while (i < ROWS_PER_PAGE && startingFrom->previous != NULL) {
 
-                while (i < ROWS_PER_PAGE && offset) {
+                    student_t* currentStudent = (student_t*)dll_nodePayload(students, startingFrom);
 
-                    fseek(file, (offset) * STUDENT_COMPONENT_LENGTH, SEEK_SET);
-
-                    if (!readStudent(file, &student)) {
-
-                        /* this cannot happen, we already read this data */
-
-                        fseek(file, offset * STUDENT_COMPONENT_LENGTH, SEEK_SET);
-
-                        hasNextPage = 0;
-
-                        break;
-
-                    }
-
-                    if (student.marks[0] == MARK_TWO || student.marks[1] == MARK_TWO || student.marks[2] == MARK_TWO) {
-
-                        tableStudent(offset, &student);
-
+                    if (currentStudent->marks[0] == MARK_TWO || currentStudent->marks[1] == MARK_TWO || currentStudent->marks[2] == MARK_TWO) {
                         i++;
-
+                        offset--;
                     }
 
-                    offset--;
+                    startingFrom = startingFrom->previous;
 
                 }
-
-                system("CLS");
 
                 break;
 
             case 2:
                 /* scroll down */
 
-                if (hasNextPage && readStudent(file, &student)) {
-
-                    offset = currentOffset;
-
+                // if (current->next == NULL) {
+                if (atTheEnd) {
+                    // printf("END\n");
+                    break;
                 }
 
-                system("CLS");
+                startingFrom = current;
+                offset += ROWS_PER_PAGE;
+
+                /*for (i = 0; i < ROWS_PER_PAGE; i++) {
+
+                    if (current->next == NULL) break;
+
+                    current = current->next;
+                    offset++;
+
+                }*/
 
                 break;
 
@@ -902,14 +875,12 @@ int menu_twosForAtLeast1Exam(char *fileName) {
 
                 system("CLS");
 
-                goto exitM;
+                goto exitMark;
 
         }
 
     }
-    exitM:
-
-    fclose(file);
+    exitMark:
 
     return 1;
 
@@ -1089,114 +1060,16 @@ int menu_twosForEveryDiscipline(char *fileName) {
 
     if (RU) {
 
-        printf("Двоек по физике: %d\n", twos[0]);
-        printf("Двоек по математике: %d\n", twos[1]);
-        printf("Двоек по информатике: %d\n", twos[2]);
+        printf("Двоек по физике: %ld\n", twos[0]);
+        printf("Двоек по математике: %ld\n", twos[1]);
+        printf("Двоек по информатике: %ld\n", twos[2]);
 
     }
     else {
 
-        printf("Two's for physics: %d\n", twos[0]);
-        printf("Two's for math: %d\n", twos[1]);
-        printf("Two's for informatics: %d\n", twos[2]);
-
-    }
-
-    fclose(file);
-
-    return 1;
-
-}
-
-int menu_editExamResult(char *fileName) {
-
-    FILE *file;
-
-    if ((file = fopen(fileName, "r+b")) == NULL) {
-
-        if (RU) perror("Ошибка открытия файла на редактирование");
-        else perror("An error occurred while trying to open the file for editing");
-
-        return 1;
-
-    }
-
-    /* fseek(file, 0, SEEK_CUR); */
-
-    if (RU) puts("Введите фамилию студента:");
-    else puts("Enter student last name:");
-
-    char studentName[MAX_STUDENT_LAST_NAME_LENGTH];
-    fgets(studentName, MAX_STUDENT_LAST_NAME_LENGTH, stdin);
-    studentName[strlen(studentName) - 1] = '\0';
-
-    system("CLS");
-
-    struct Student st;
-    long int n = 0, found = 0;
-    char yes;
-
-    while (1) {
-
-        fseek(file, n * STUDENT_COMPONENT_LENGTH, SEEK_SET);
-
-        if (!readStudent(file, &st)) {
-
-            break;
-
-        }
-
-        /* printf("Comp: Read: %s Searching: %s\n", st.name, studentName); */
-
-        if (!strcmp(st.name, studentName)) {
-
-            found++;
-
-            system("CLS");
-
-            tableTop();
-
-            tableStudent(n, &st);
-
-            if (RU) puts("Редактировать? (y/n)");
-            else puts("Edit? (y/n)");
-
-            do {
-
-                yes = getchar();
-
-            } while (yes != 'y' && yes != 'Y' && yes != 'n' && yes != 'N');
-
-            getchar();
-
-            if (yes == 'y' || yes == 'Y') {
-
-                inputStudent(&st);
-
-                fseek(file, n * STUDENT_COMPONENT_LENGTH, SEEK_SET);
-
-                writeStudent(file, &st);
-
-                fseek(file, 0, SEEK_CUR); /* to write mode */
-
-            }
-
-        }
-
-        n++;
-
-    }
-
-    if (n == 0) {
-
-        if (RU) puts("Файл пустой.");
-        else puts("File empty.");
-
-    }
-    else if (found == 0) {
-
-        if (RU) puts("Не найдено студентов с этой фамилией.");
-        else puts("No matching students found.");
+        printf("Two's for physics: %ld\n", twos[0]);
+        printf("Two's for math: %ld\n", twos[1]);
+        printf("Two's for informatics: %ld\n", twos[2]);
 
     }
 
