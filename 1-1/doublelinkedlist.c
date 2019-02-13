@@ -109,3 +109,9 @@ inline void dll_deleteFirstNode(doublelinkedlist_t* list) {
     list->firstNode = list->firstNode->next;
 
 }
+
+inline void* dll_nodePayload(doublelinkedlist_t* list, doublelinkedlist_node_t* node) {
+
+    return ((char*)node) + list->_payloadSize;
+
+}

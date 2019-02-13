@@ -23,19 +23,20 @@ typedef struct Student {
     } livingIn;
 } student_t;
 
-int mainMenu();
+int mainMenu(char* fileName);
 char readMark();
 void inputStudent(struct Student *student);
 void tableTop();
 void tableStudent(long number, struct Student *stud);
 void tableBottom();
 char markValid(char mark);
+void fileSave(char* fileName, doublelinkedlist_t* students);
 int fileViewMenu(char *fileName);
 void writeStudent(FILE *file, struct Student *student);
 char readStudent(FILE *file, struct Student *student);
 unsigned long fwriteString(FILE *file, char *string);
 void freadString(FILE *file, char *str, unsigned int maxLength);
-int menu_view(char *fileName);
+int menu_view(doublelinkedlist_t* students);
 int menu_twosForAtLeast1Exam(char *fileName);
 int menu_deleteExamResult(char *fileName);
 int menu_twosForEveryDiscipline(char *fileName);
@@ -51,7 +52,13 @@ int main(int argc, char *argv[]) {
     if (RU) puts("Добро пожаловать!");
     else puts("Welcome!");
 
-    while (mainMenu() == 1);
+    char* fileName = NULL;
+
+    if (argc >= 2) {
+        fileName = argv[1];
+    }
+
+    while (mainMenu(fileName) == 1);
 
     system("pause");
 
@@ -59,7 +66,7 @@ int main(int argc, char *argv[]) {
 
 }
 
-int mainMenu() {
+int mainMenu(char* fileName) {
 
     if (RU) {
 
@@ -85,24 +92,32 @@ int mainMenu() {
 
     switch (result) {
 
-        case 1:
+        case 1: {
 
             /* new file */
 
-            if (RU) puts("Введите название файла:");
-            else puts("Enter output file name:");
-
             char outputFileName[MAX_FNAME_LENGTH];
 
-            fgets(outputFileName, MAX_FNAME_LENGTH, stdin);
+            if (fileName == NULL) {
 
-            outputFileName[strlen(outputFileName) - 1] = '\0';
+                if (RU) puts("Введите название файла:");
+                else puts("Enter output file name:");
 
-            FILE *outputFile;
+                fgets(outputFileName, MAX_FNAME_LENGTH, stdin);
+                outputFileName[strlen(outputFileName) - 1] = '\0';
+
+            }
+            else {
+
+                strncpy(outputFileName, fileName, MAX_FNAME_LENGTH - 1);
+
+            }
+
+            FILE* outputFile;
 
             if ((outputFile = fopen(outputFileName, "wb")) == NULL) {
 
-                if (RU) perror("Ошибка при открытии файла на чтение");
+                if (RU) perror("Ошибка при открытии файла на запись");
                 else perror("An error occurred while trying to open the output file for writing");
 
                 return 1;
@@ -120,23 +135,34 @@ int mainMenu() {
 
             break;
 
-        case 2:
+        }
+
+        case 2: {
 
             /* view & edit file */
 
-            if (RU) puts("Введите имя файла:");
-            else puts("Enter file name:");
+            char viewFileName[MAX_FNAME_LENGTH];
 
-            char fileName[MAX_FNAME_LENGTH];
+            if (fileName == NULL) {
 
-            fgets(fileName, MAX_FNAME_LENGTH, stdin);
-            fileName[strlen(fileName) - 1] = '\0';
+                if (RU) puts("Введите имя файла:");
+                else puts("Enter file name:");
+
+                fgets(viewFileName, MAX_FNAME_LENGTH, stdin);
+                viewFileName[strlen(viewFileName) - 1] = '\0';
+
+            }
+            else {
+                strncpy(viewFileName, fileName, MAX_FNAME_LENGTH - 1);
+            }
 
             system("CLS");
 
-            while (fileViewMenu(fileName) == 1);
+            while (fileViewMenu(viewFileName) == 1);
 
             break;
+
+        }
 
         case 3:
             return 0;
@@ -156,53 +182,80 @@ int mainMenu() {
 
 }
 
-int fileViewMenu(char *fileName) {
+void fileSave(char* fileName, doublelinkedlist_t* students) {
 
     FILE *file;
 
-    if ((file = fopen(fileName, "rb")) == NULL) {
+    if ((file = fopen(fileName, "wb")) == NULL) {
 
         system("CLS");
 
         if (RU) perror("Ошибка файловой системы");
         else perror("FS error");
 
-        return 0;
+        return;
 
     }
 
-    long offset = 0;
-    doublelinkedlist_t students = DLL_INIT(sizeof(student_t));
+    doublelinkedlist_node_t* current = students->firstNode;
 
-    while (1) {
+    while (current != NULL) {
 
-        fseek(file, offset * STUDENT_COMPONENT_LENGTH, SEEK_SET);
+        writeStudent(file, (student_t*)dll_nodePayload(students, current));
 
-        student_t student;
-        if (!readStudent(file, &student)) {
-
-            if (!offset) {
-                if (RU) puts("Файл пустой.");
-                else puts("File empty, nothing to view.");
-            }
-
-            break;
-
-        }
-
-        student_t* s = dll_addNodeToBeginning(&students);
-
-        if (s == NULL) break; // not a good thing to do
-
-        *s = student;
-
-        offset++;
+        current = current->next;
 
     }
 
     fclose(file);
 
-    printf("Students: %p %p\n", students.firstNode, students.lastNode);
+}
+
+int fileViewMenu(char *fileName) {
+
+    doublelinkedlist_t students = DLL_INIT(sizeof(student_t));
+
+    {
+        FILE *file;
+
+        if ((file = fopen(fileName, "rb")) == NULL) {
+
+            system("CLS");
+
+            if (RU) perror("Ошибка файловой системы");
+            else perror("FS error");
+
+            return 0;
+
+        }
+
+        long offset = 0;
+
+        while (1) {
+
+            fseek(file, offset * STUDENT_COMPONENT_LENGTH, SEEK_SET);
+
+            student_t student;
+            if (!readStudent(file, &student)) {
+
+                break;
+
+            }
+
+            student_t* s = (student_t*)dll_addNodeToBeginning(&students);
+
+            if (s == NULL) break; // not a good thing to do
+
+            *s = student;
+
+            offset++;
+
+        }
+
+        fclose(file);
+    }
+
+    /*printf("Students: %p %p\n", students.firstNode, students.lastNode);*/
 
     if (RU) {
 
@@ -234,32 +287,25 @@ int fileViewMenu(char *fileName) {
     scanf("%d", &result);
     getchar();
 
+    // system("CLS");
+
     switch (result) {
 
         case 1:
 
             /* view file */
 
-            return menu_view(fileName);
+            return menu_view(&students);
 
         case 2:
 
             system("CLS");
 
-            if ((file = fopen(fileName, "ab")) == NULL) {
-
-                if (RU) perror("Ошибка при открытии файла для записи");
-                else perror("An error occurred while trying to open the file for writing");
-
-                return 1;
-
-            }
-
             /* add exam result */
 
-            struct Student student;
+            student_t* student = (student_t*)dll_addNodeToBeginning(&students);
 
-            inputStudent(&student);
+            inputStudent(student);
 
             /*fseek(file, 0, SEEK_SET);*/
 
@@ -267,9 +313,7 @@ int fileViewMenu(char *fileName) {
 
             /*printf("Writing to %d\n", ftell(file));*/
 
-            writeStudent(file, &student);
-
-            fclose(file);
+            fileSave(fileName, &students);
 
             if (RU) puts("Результат экзамена добавлен.");
             else puts("Exam result added.");
@@ -573,60 +617,35 @@ void freadString(FILE *file, char *str, unsigned int maxLength) {
 
 }
 
-int menu_view(char *fileName) {
+int menu_view(doublelinkedlist_t* students) {
 
-    FILE *file;
+    doublelinkedlist_node_t* startingFrom = students->firstNode;
 
-    if ((file = fopen(fileName, "rb")) == NULL) {
+    if (startingFrom == NULL) {
 
-        system("CLS");
-
-        if (RU) perror("Ошибка при открытии файла не чтение");
-        else perror("An error occurred while trying to open the file for reading");
+        if (RU) puts("Файл пустой.");
+        else puts("File empty, nothing to view.");
 
         return 1;
 
     }
 
-    fseek(file, 0, SEEK_SET);
-
-    long int offset = 0, i;
-    int choise;
-    char hasNextPage;
-    student_t student;
+    doublelinkedlist_node_t* current;
+    int i, offset = 0;
 
     while (1) {
 
         system("CLS");
-
-        fseek(file, offset * STUDENT_COMPONENT_LENGTH, SEEK_SET);
-
-        if (!readStudent(file, &student)) {
-
-            if (RU) puts("Файл пустой.");
-            else puts("File empty, nothing to view.");
-
-            goto exitMark;
-
-        }
+        current = startingFrom;
 
         tableTop();
 
-        hasNextPage = 1;
-
         for (i = 0; i < ROWS_PER_PAGE; i++) {
 
-            fseek(file, (offset + i) * STUDENT_COMPONENT_LENGTH, SEEK_SET);
+            if (current->next == NULL) break;
 
-            if (!readStudent(file, &student)) {
-
-                fseek(file, (offset + i) * STUDENT_COMPONENT_LENGTH, SEEK_SET);
-
-                hasNextPage = 0;
-
-                break;
-
-            }
+            current = current->next;
+            // offset++;
 
             /*printf("Student last name: ");
             puts(stud->name);
@@ -634,7 +653,7 @@ int menu_view(char *fileName) {
             printf("Math mark: %d\n", stud->marks[1]);
             printf("Informatics mark: %d\n", stud->marks[2]);*/
 
-            tableStudent(i + offset, &student);
+            tableStudent(i + offset, (student_t*)dll_nodePayload(students, current));
 
         }
 
@@ -657,6 +676,7 @@ int menu_view(char *fileName) {
 
         }
 
+        int choise;
         scanf("%d", &choise);
 
         getchar();
@@ -666,23 +686,38 @@ int menu_view(char *fileName) {
             case 1:
                 /* scroll up */
 
-                offset -= ROWS_PER_PAGE;
-                if (offset < 0) offset = 0;
+                for (i = 0; i < ROWS_PER_PAGE; i++) {
+
+                    if (current->previous == NULL) break;
+
+                    current = current->previous;
+                    offset--;
+
+                }
+
+                /*offset -= ROWS_PER_PAGE;*/
+                /*if (offset < 0) offset = 0;*/
 
                 break;
 
             case 2:
                 /* scroll down */
 
-                if (!hasNextPage) break;
-
-                fseek(file, (offset + ROWS_PER_PAGE) * STUDENT_COMPONENT_LENGTH, SEEK_SET);
-
-                if (readStudent(file, &student)) {
-
-                    offset += ROWS_PER_PAGE;
-
+                if (current->next == NULL) {
+                    printf("END\n");
+                    break;
                 }
+
+                startingFrom = current;
+
+                /*for (i = 0; i < ROWS_PER_PAGE; i++) {
+
+                    if (current->next == NULL) break;
+
+                    current = current->next;
+                    offset++;
+
+                }*/
 
                 break;
 
@@ -696,8 +731,6 @@ int menu_view(char *fileName) {
 
     }
     exitMark:
-
-    fclose(file);
 
     return 1;
 
