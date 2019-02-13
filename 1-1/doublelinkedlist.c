@@ -1,5 +1,7 @@
 #include "doublelinkedlist.h"
 
+#include <stdio.h>
+
 inline void* dll_addNodeToBeginning(doublelinkedlist_t* list) {
 
     doublelinkedlist_node_t* node =
