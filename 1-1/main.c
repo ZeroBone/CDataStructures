@@ -39,8 +39,7 @@ void freadString(FILE *file, char *str, unsigned int maxLength);
 int menu_view(doublelinkedlist_t* students);
 int menu_twosForAtLeast1Exam(doublelinkedlist_t* students);
 int menu_deleteExamResult(char *fileName);
-int menu_twosForEveryDiscipline(char *fileName);
-int menu_editExamResult(char *fileName);
+int menu_twosForEveryDiscipline(doublelinkedlist_t* students);
 
 int main(int argc, char *argv[]) {
 
@@ -263,10 +262,9 @@ int fileViewMenu(char *fileName) {
         puts("1 - просмотреть файл.");
         puts("2 - добавить результат экзамена.");
         puts("3 - удалить результат экзамена.");
-        puts("4 - отредактировать результат экзамена.");
-        puts("5 - посчитать количество двоек для каждой дисциплины.");
-        puts("6 - вывести студентов, у которых двойки хотя-бы по одному экзамену.");
-        puts("7 - вернуться в главное меню.");
+        puts("4 - посчитать количество двоек для каждой дисциплины.");
+        puts("5 - вывести студентов, у которых двойки хотя-бы по одному экзамену.");
+        puts("6 - вернуться в главное меню.");
 
     }
     else {
@@ -275,10 +273,9 @@ int fileViewMenu(char *fileName) {
         puts("1 - view file.");
         puts("2 - add exam result.");
         puts("3 - delete an exam result.");
-        puts("4 - edit an exam result.");
-        puts("5 - get the amount of 2-s for every discipline.");
-        puts("6 - get students, that have 2-s for at least 1 exam.");
-        puts("7 - return to the main menu.");
+        puts("4 - get the amount of 2-s for every discipline.");
+        puts("5 - get students, that have 2-s for at least 1 exam.");
+        puts("6 - return to the main menu.");
 
     }
 
@@ -321,23 +318,17 @@ int fileViewMenu(char *fileName) {
 
         case 4:
 
-            /* edit an exam result */
-
-            return menu_editExamResult(fileName);
-
-        case 5:
-
             /* get the amount of 2-s for every discipline */
 
-            return menu_twosForEveryDiscipline(fileName);
+            return menu_twosForEveryDiscipline(&students);
 
-        case 6:
+        case 5:
 
             /* get students, that have 2-s for at least 1 exam */
 
             return menu_twosForAtLeast1Exam(&students);
 
-        case 7:
+        case 6:
 
             system("CLS");
 
@@ -653,11 +644,6 @@ int menu_view(doublelinkedlist_t* students) {
 
             current = current->next;
             // offset++;
-
-
-
-
-
         }
 
         tableBottom();
@@ -1003,50 +989,31 @@ int menu_deleteExamResult(char *fileName) {
 
 }
 
-int menu_twosForEveryDiscipline(char *fileName) {
+int menu_twosForEveryDiscipline(doublelinkedlist_t* students) {
 
-    FILE *file;
+    system("cls");
 
-    if ((file = fopen(fileName, "rb")) == NULL) {
+    doublelinkedlist_node_t* current = students->firstNode;
 
-        system("CLS");
+    if (current == NULL) {
 
-        if (RU) perror("Ошибка открытия файла на чтение.");
-        else perror("An error occurred while trying to open the file for reading");
+        if (RU) puts("Файл пустой.");
+        else puts("File empty, nothing to view.");
 
         return 1;
 
     }
 
-    fseek(file, 0, SEEK_SET);
-
-    system("CLS");
-
     long int twos[] = {0, 0, 0};
-    long int off = 0;
     int k;
-    struct Student stu;
 
-    while (1) {
+    while (current->next != NULL) {
 
-        fseek(file, off * STUDENT_COMPONENT_LENGTH, SEEK_SET);
-
-        if (!readStudent(file, &stu)) {
-
-            if (!off) {
-
-                if (RU) puts("Файл пустой.");
-                else puts("File empty, nothing to view.");
-
-            }
-
-            break;
-
-        }
+        student_t* currentStudent = (student_t*)dll_nodePayload(students, current);
 
         for (k = 0; k < 3; k++) {
 
-            if (stu.marks[k] == MARK_TWO) {
+            if (currentStudent->marks[k] == MARK_TWO) {
 
                 twos[k]++;
 
@@ -1054,7 +1021,7 @@ int menu_twosForEveryDiscipline(char *fileName) {
 
         }
 
-        off++;
+        current = current->next;
 
     }
 
@@ -1072,8 +1039,6 @@ int menu_twosForEveryDiscipline(char *fileName) {
         printf("Two's for informatics: %ld\n", twos[2]);
 
     }
-
-    fclose(file);
 
     return 1;
 
