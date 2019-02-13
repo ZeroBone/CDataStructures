@@ -212,8 +212,6 @@ int fileViewMenu(char *fileName) {
 			/* view file */
 			
 			return menu_view(fileName);
-			
-			break;
 		
 		case 2:
 			
@@ -331,22 +329,24 @@ void inputStudent(struct Student *student) {
 		
 	}
 
-	getchar();
-
 	if (RU) puts("Этот студент живёт в общежитии? (y/n)");
 	else puts("Does this student live in a hostel? (y/n)");
 
     char isLivingInWG;
 
-	scanf("%c", &isLivingInWG);
+	getchar();
+    scanf("%c", &isLivingInWG);
+    // printf("%c\n", isLivingInWG);
+	getchar();
 
-	if (isLivingInWG == 'y' || isLivingInWG == 'n') {
+	if (isLivingInWG == 'y' || isLivingInWG == 'Y') {
 	    student->inWG = 1;
 
         if (RU) puts("Введите номер общежития студента.");
         else puts("Enter student WG id.");
 
 	    scanf("%d", &student->livingIn.wgId);
+		getchar();
 
 	}
 	else {
@@ -356,7 +356,9 @@ void inputStudent(struct Student *student) {
         else puts("Enter student address.");
 
         fgets(student->livingIn.address, MAX_STUDENT_ADDRESS_LENGTH, stdin);
-        student->name[strlen(student->name) - 1] = '\0';
+		student->livingIn.address[strlen(student->livingIn.address) - 1] = '\0';
+
+        // printf("Got address: '%s'\n", student->livingIn.address);
 
 	}
 	
@@ -398,7 +400,7 @@ void tableStudent(long number, student_t *stud) {
 	}
 	else {
 
-        printf(" %-20s |\n", stud->livingIn.address);
+        printf(" %-21s |\n", stud->livingIn.address);
 
 	}
 	
