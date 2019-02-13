@@ -46,7 +46,7 @@ inline void* dll_insertNodeAfter(doublelinkedlist_t* list, doublelinkedlist_node
     }
     else {
         // we are adding this node between some nodes
-        afterNode->previous = node;
+        afterNode->next->previous = node;
     }
 
     node->next = afterNode->next;
@@ -66,6 +66,44 @@ inline void* dll_insertNodeBefore(doublelinkedlist_t* list, doublelinkedlist_nod
         return NULL;
     }
 
+    node->next = beforeNode;
 
+    if (beforeNode->previous == NULL) {
+        // we are adding to the start of the linked list
+        list->firstNode = node;
+    }
+    else {
+        beforeNode->previous->next = node;
+    }
+
+    node->previous = beforeNode->previous;
+
+    beforeNode->previous = node;
+
+    return ((char*)node) + list->_payloadSize;
+
+}
+
+inline void dll_deleteFirstNode(doublelinkedlist_t* list) {
+
+    if (list->firstNode == NULL) {
+        return;
+    }
+
+    // if (list->firstNode->next == NULL) {
+    if (list->firstNode == list->lastNode) {
+        // we are deleting the last and only node
+
+        free(list->firstNode);
+
+        list->firstNode = NULL;
+        list->lastNode = NULL;
+
+        return;
+
+    }
+
+    list->firstNode->next->previous = NULL;
+    list->firstNode = list->firstNode->next;
 
 }

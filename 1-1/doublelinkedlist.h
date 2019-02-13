@@ -22,4 +22,8 @@ typedef struct {
         .lastNode = NULL \
     };
 
+#define DLL_EMPTY(dll) ((dll).firstNode == NULL)
+
+#define DLL_NOT_EMPTY(dll) ((dll).firstNode != NULL)
+
 #endif //INC_1_1_DOUBLELINKEDLIST_H
