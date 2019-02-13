@@ -29,7 +29,6 @@ void writeStudent(FILE *file, struct Student *student);
 char readStudent(FILE *file, struct Student *student);
 unsigned long fwriteString(FILE *file, char *string);
 void freadString(FILE *file, char *str, unsigned int maxLength);
-void writeInt(FILE *file, long int value);
 int menu_view(char *fileName);
 int menu_twosForAtLeast1Exam(char *fileName);
 int menu_deleteExamResult(char *fileName);
@@ -74,7 +73,6 @@ int mainMenu() {
 	}
 	
 	int result;
-	
 	scanf("%d", &result);
 	
 	getchar();
@@ -468,18 +466,6 @@ void freadString(FILE *file, char *str, unsigned int maxLength) {
 		str[i] = current;
 		
 	}
-	
-}
-
-void writeInt(FILE *file, long int value) {
-	
-	fwrite(&value, sizeof(long int), 1, file);
-	/*unsigned long int uvalue = (unsigned long int)value;
-	
-	fputc((uvalue >> 24) & 0xff, file);
-	fputc((uvalue >> 16) & 0xff, file);
-	fputc((uvalue >> 8) & 0xff, file);
-	fputc(uvalue & 0xff, file);*/
 	
 }
 
