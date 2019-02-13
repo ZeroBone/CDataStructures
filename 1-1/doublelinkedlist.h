@@ -33,9 +33,12 @@ typedef struct {
 #define DDL_PAYLOAD(list, node) (((char*)(node)) + (list)->_payloadSize)
 
 inline void* dll_addNodeToBeginning(doublelinkedlist_t* list);
+inline void* dll_addNodeToEnd(doublelinkedlist_t* list);
 inline void* dll_insertNodeAfter(doublelinkedlist_t* list, doublelinkedlist_node_t* afterNode);
 inline void* dll_insertNodeBefore(doublelinkedlist_t* list, doublelinkedlist_node_t* beforeNode);
 inline void dll_deleteFirstNode(doublelinkedlist_t* list);
+inline void dll_deleteLastNode(doublelinkedlist_t* list);
+inline void dll_deleteNode(doublelinkedlist_t* list, doublelinkedlist_node_t* node);
 inline void* dll_nodePayload(doublelinkedlist_t* list, doublelinkedlist_node_t* node);
 
 #endif //INC_1_1_DOUBLELINKEDLIST_H

@@ -38,7 +38,7 @@ unsigned long fwriteString(FILE *file, char *string);
 void freadString(FILE *file, char *str, unsigned int maxLength);
 int menu_view(doublelinkedlist_t* students);
 int menu_twosForAtLeast1Exam(doublelinkedlist_t* students);
-int menu_deleteExamResult(char *fileName);
+int menu_deleteExamResult(doublelinkedlist_t* students);
 int menu_twosForEveryDiscipline(doublelinkedlist_t* students);
 
 int main(int argc, char *argv[]) {
@@ -284,7 +284,7 @@ int fileViewMenu(char *fileName) {
     scanf("%d", &result);
     getchar();
 
-    // system("CLS");
+    system("CLS");
 
     switch (result) {
 
@@ -300,9 +300,48 @@ int fileViewMenu(char *fileName) {
 
             /* add exam result */
 
-            student_t* student = (student_t*)dll_addNodeToBeginning(&students);
+            student_t newStudent;
+            inputStudent(&newStudent);
 
-            inputStudent(student);
+            doublelinkedlist_node_t* current = students.firstNode;
+            student_t* student;
+
+            if (current == NULL) {
+                // we are adding to an empty file
+
+                student = (student_t*)dll_addNodeToBeginning(&students);
+
+            }
+            else {
+
+                bool foundNext = false;
+
+                while (current->next != NULL) {
+
+                    student_t* compareStudent = (student_t*)dll_nodePayload(&students, current);
+
+                    if (strcmp(newStudent.name, compareStudent->name) <= 0) {
+
+                        student = (student_t*)dll_insertNodeBefore(&students, current);
+
+                        foundNext = true;
+
+                        break;
+
+                    }
+
+                    current = current->next;
+
+                }
+
+                // if (current->next == NULL) {
+                if (!foundNext) {
+                    student = (student_t*)dll_addNodeToEnd(&students);
+                }
+
+            }
+
+            *student = newStudent;
 
             fileSave(fileName, &students);
 
@@ -314,7 +353,11 @@ int fileViewMenu(char *fileName) {
         case 3:
             /* delete an exam result */
 
-            return menu_deleteExamResult(fileName);
+            menu_deleteExamResult(&students);
+
+            fileSave(fileName, &students);
+
+            break;
 
         case 4:
 
@@ -872,30 +915,7 @@ int menu_twosForAtLeast1Exam(doublelinkedlist_t* students) {
 
 }
 
-int menu_deleteExamResult(char *fileName) {
-
-    FILE *file;
-    FILE *tempFile;
-
-    if ((file = fopen(fileName, "r+b")) == NULL) {
-
-        if (RU) perror("Ошибка при открытии файла для чтения");
-        else perror("An error occurred while trying to open the file for reading");
-
-        return 1;
-
-    }
-
-    if ((tempFile = fopen("temp.bin", "wb")) == NULL) {
-
-        if (RU) perror("Ошибка при открытии файла для чтения");
-        else perror("An error occurred while trying to open the file for reading");
-
-        return 1;
-
-    }
-
-    /* fseek(file, 0, SEEK_CUR); */
+int menu_deleteExamResult(doublelinkedlist_t* students) {
 
     if (RU) puts("Введите фамилию студента");
     else puts("Enter student last name:");
@@ -906,33 +926,35 @@ int menu_deleteExamResult(char *fileName) {
 
     system("CLS");
 
-    struct Student st;
-    long int n = 0, found = 0;
-    char yes;
-    char keep;
+    doublelinkedlist_node_t* current = students->firstNode;
 
-    while (1) {
+    if (current == NULL) {
 
-        fseek(file, n * STUDENT_COMPONENT_LENGTH, SEEK_SET);
+        if (RU) puts("Файл пустой.");
+        else puts("File empty, nothing to view.");
 
-        if (!readStudent(file, &st)) {
+        return 1;
 
-            break;
+    }
 
-        }
+    int offset = 0;
 
-        if (!strcmp(st.name, studentName)) {
+    while (current->next != NULL) {
 
-            found++;
+        student_t* currentStudent = (student_t*)dll_nodePayload(students, current);
+
+        if (!strcmp(currentStudent->name, studentName)) {
 
             system("CLS");
 
             tableTop();
 
-            tableStudent(n, &st);
+            tableStudent(offset, currentStudent);
 
             if (RU) puts("Удалить? (y/n)");
             else puts("Delete? (y/n)");
+
+            char yes;
 
             do {
 
@@ -943,47 +965,23 @@ int menu_deleteExamResult(char *fileName) {
             getchar();
 
             if (yes == 'y' || yes == 'Y') {
+                // delete
 
-                fseek(file, n * STUDENT_COMPONENT_LENGTH, SEEK_SET);
+                doublelinkedlist_node_t* next = current->next;
 
-                keep = 0;
+                dll_deleteNode(students, current);
 
-                fseek(file, 0, SEEK_CUR); /* to write mode */
+                current = next;
+
+                continue;
 
             }
-            else keep = 1;
-
-        }
-        else keep = 1;
-
-        if (keep) {
-
-            writeStudent(tempFile, &st);
 
         }
 
-        n++;
+        current = current->next;
 
     }
-
-    if (n == 0) {
-
-        if (RU) puts("Файл пустой.");
-        else puts("File empty.");
-
-    }
-    else if (found == 0) {
-
-        if (RU) puts("Не найдено студентов с такой фамилией.");
-        else puts("No matching students found.");
-
-    }
-
-    fclose(file);
-    fclose(tempFile);
-
-    unlink(fileName);
-    rename("temp.bin", fileName);
 
     return 1;
 

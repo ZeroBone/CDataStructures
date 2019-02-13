@@ -30,6 +30,34 @@ inline void* dll_addNodeToBeginning(doublelinkedlist_t* list) {
 
 }
 
+inline void* dll_addNodeToEnd(doublelinkedlist_t* list) {
+
+    doublelinkedlist_node_t* node =
+        (doublelinkedlist_node_t*)malloc(sizeof(doublelinkedlist_node_t) + list->_payloadSize);
+
+    if (node == NULL) {
+        return NULL;
+    }
+
+    node->next = NULL;
+    node->previous = list->lastNode;
+
+    if (list->lastNode == NULL) {
+        // empty linked list
+        // the first node is the last one
+        list->firstNode = node;
+    }
+    else {
+        // there is already at least one element
+        list->lastNode->next = node;
+    }
+
+    list->lastNode = node;
+
+    return ((char*)node) + sizeof(doublelinkedlist_node_t);
+
+}
+
 inline void* dll_insertNodeAfter(doublelinkedlist_t* list, doublelinkedlist_node_t* afterNode) {
 
     doublelinkedlist_node_t* node =
@@ -106,7 +134,64 @@ inline void dll_deleteFirstNode(doublelinkedlist_t* list) {
     }
 
     list->firstNode->next->previous = NULL;
+
+    doublelinkedlist_node_t* oldFirstNode = list->firstNode;
     list->firstNode = list->firstNode->next;
+
+    free(oldFirstNode);
+
+}
+
+inline void dll_deleteLastNode(doublelinkedlist_t* list) {
+
+    if (list->firstNode == NULL) {
+        return;
+    }
+
+    // if (list->firstNode->next == NULL) {
+    if (list->firstNode == list->lastNode) {
+        // we are deleting the last and only node
+
+        free(list->lastNode); // doesn't matter first node or last node
+
+        list->firstNode = NULL;
+        list->lastNode = NULL;
+
+        return;
+
+    }
+
+    list->lastNode->previous->next = NULL;
+
+    doublelinkedlist_node_t* oldLastNode = list->lastNode;
+    list->lastNode = list->lastNode->previous;
+
+    free(oldLastNode);
+
+}
+
+inline void dll_deleteNode(doublelinkedlist_t* list, doublelinkedlist_node_t* node) {
+
+    if (node->previous == NULL) {
+        // this is the first node
+
+        dll_deleteFirstNode(list);
+        return;
+
+    }
+
+    if (node->next == NULL) {
+        // last node
+
+        dll_deleteLastNode(list);
+        return;
+
+    }
+
+    node->previous->next = node->next;
+    node->next->previous = node->previous;
+
+    free(node);
 
 }
 
