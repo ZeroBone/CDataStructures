@@ -307,12 +307,6 @@ int fileViewMenu(char *fileName) {
 
             inputStudent(student);
 
-            /*fseek(file, 0, SEEK_SET);*/
-
-            /*fseek(file, -1, SEEK_END);*/
-
-            /*printf("Writing to %d\n", ftell(file));*/
-
             fileSave(fileName, &students);
 
             if (RU) puts("Результат экзамена добавлен.");

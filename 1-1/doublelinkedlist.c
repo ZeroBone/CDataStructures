@@ -26,7 +26,7 @@ inline void* dll_addNodeToBeginning(doublelinkedlist_t* list) {
 
     list->firstNode = node;
 
-    return ((char*)node) + list->_payloadSize;
+    return ((char*)node) + sizeof(doublelinkedlist_node_t);
 
 }
 
@@ -55,7 +55,7 @@ inline void* dll_insertNodeAfter(doublelinkedlist_t* list, doublelinkedlist_node
 
     afterNode->next = node;
 
-    return ((char*)node) + list->_payloadSize;
+    return ((char*)node) + sizeof(doublelinkedlist_node_t);
 
 }
 
@@ -82,7 +82,7 @@ inline void* dll_insertNodeBefore(doublelinkedlist_t* list, doublelinkedlist_nod
 
     beforeNode->previous = node;
 
-    return ((char*)node) + list->_payloadSize;
+    return ((char*)node) + sizeof(doublelinkedlist_node_t);
 
 }
 
@@ -112,6 +112,6 @@ inline void dll_deleteFirstNode(doublelinkedlist_t* list) {
 
 inline void* dll_nodePayload(doublelinkedlist_t* list, doublelinkedlist_node_t* node) {
 
-    return ((char*)node) + list->_payloadSize;
+    return ((char*)node) + sizeof(doublelinkedlist_node_t);
 
 }
