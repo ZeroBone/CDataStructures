@@ -26,4 +26,9 @@ typedef struct {
 
 #define DLL_NOT_EMPTY(dll) ((dll).firstNode != NULL)
 
+inline void* dll_addNodeToBeginning(doublelinkedlist_t* list);
+inline void* dll_insertNodeAfter(doublelinkedlist_t* list, doublelinkedlist_node_t* afterNode);
+inline void* dll_insertNodeBefore(doublelinkedlist_t* list, doublelinkedlist_node_t* beforeNode);
+inline void dll_deleteFirstNode(doublelinkedlist_t* list);
+
 #endif //INC_1_1_DOUBLELINKEDLIST_H

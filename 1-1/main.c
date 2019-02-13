@@ -3,19 +3,27 @@
 #include <locale.h>
 #include <windows.h>
 #include <string.h>
+#include "doublelinkedlist.c"
 #define MAX_FNAME_LENGTH 50
 #define MAX_STUDENT_LAST_NAME_LENGTH 20
-#define STUDENT_COMPONENT_LENGTH 23
+#define MAX_STUDENT_ADDRESS_LENGTH 20
+#define STUDENT_COMPONENT_LENGTH 45
 #define MARK_MIN 2
 #define MARK_MAX 5
 #define MARK_TWO 2
 #define ROWS_PER_PAGE 5
 #define RU 1
 
-struct Student {
+typedef struct Student {
 	char marks[3];
 	char name[MAX_STUDENT_LAST_NAME_LENGTH];
-};
+	// char :1;
+	char inWG:1;
+	union {
+	    int wgId;
+	    char address[MAX_STUDENT_ADDRESS_LENGTH];
+	} livingIn;
+} student_t;
 
 int mainMenu();
 char readMark();
@@ -38,7 +46,7 @@ int menu_editExamResult(char *fileName);
 int main(int argc, char *argv[]) {
 	
 	setlocale(LC_ALL, "Russian");
-	
+
 	SetConsoleCP(1251);
 	SetConsoleOutputCP(1251);
 	
@@ -322,6 +330,35 @@ void inputStudent(struct Student *student) {
 		else puts("Invalid mark entered, try again:");
 		
 	}
+
+	getchar();
+
+	if (RU) puts("Этот студент живёт в общежитии? (y/n)");
+	else puts("Does this student live in a hostel? (y/n)");
+
+    char isLivingInWG;
+
+	scanf("%c", &isLivingInWG);
+
+	if (isLivingInWG == 'y' || isLivingInWG == 'n') {
+	    student->inWG = 1;
+
+        if (RU) puts("Введите номер общежития студента.");
+        else puts("Enter student WG id.");
+
+	    scanf("%d", &student->livingIn.wgId);
+
+	}
+	else {
+        student->inWG = 0;
+
+        if (RU) puts("Введите место жительства студента.");
+        else puts("Enter student address.");
+
+        fgets(student->livingIn.address, MAX_STUDENT_ADDRESS_LENGTH, stdin);
+        student->name[strlen(student->name) - 1] = '\0';
+
+	}
 	
 }
 
@@ -329,36 +366,47 @@ void tableTop() {
 	
 	if (RU) {
 		
-		puts("--------------------------------------");
-		puts("|  #|      Фамилия       | Ф | М | И |");
-		puts("--------------------------------------");
+		puts("--------------------------------------------------------------");
+		puts("|  #|      Фамилия       | Ф | М | И | Место жительства      |");
+		puts("--------------------------------------------------------------");
 		
 	}
 	else {
 		
-		puts("--------------------------------------");
-		puts("|  #|        Name        | P | M | I |");
-		puts("--------------------------------------");
+		puts("--------------------------------------------------------------");
+		puts("|  #|        Name        | P | M | I | Living |");
+		puts("--------------------------------------------------------------");
 		
 	}
 	
 }
 
-void tableStudent(long number, struct Student *stud) {
+void tableStudent(long number, student_t *stud) {
 	
-	printf("|%3ld|%-20s| %1d | %1d | %1d |\n",
+	printf("|%3ld|%-20s| %1d | %1d | %1d |",
 		number + 1,
 		stud->name,
 		stud->marks[0],
 		stud->marks[1],
 		stud->marks[2]
 	);
+
+	if (stud->inWG) {
+
+	    printf(" Общежитие #%-10d |\n", stud->livingIn.wgId);
+
+	}
+	else {
+
+        printf(" %-20s |\n", stud->livingIn.address);
+
+	}
 	
 }
 
 void tableBottom() {
 	
-	puts("--------------------------------------");
+	puts("--------------------------------------------------------------");
 	
 }
 
@@ -378,13 +426,25 @@ char readMark() {
 	
 }
 
-void writeStudent(FILE *file, struct Student *student) {
+void writeStudent(FILE *file, student_t *student) {
 	
 	fputc(student->marks[0], file);
 	fputc(student->marks[1], file);
 	fputc(student->marks[2], file);
 	
 	long written = 3 + fwriteString(file, student->name);
+
+	fputc(student->inWG, file);
+
+	written++;
+
+	if (student->inWG) {
+		fwrite(&student->livingIn.wgId, sizeof(int), 1, file);
+		written += sizeof(int);
+	}
+	else {
+		written += fwriteString(file, student->livingIn.address);
+	}
 	
 	/* printf("Written: %d\n", written); */
 	
@@ -410,7 +470,7 @@ char readStudent(FILE *file, struct Student *student) {
 			
 		}
 		
-		student->marks[i] = current;
+		student->marks[i] = (char)current;
 		
 	}
 	
@@ -421,6 +481,19 @@ char readStudent(FILE *file, struct Student *student) {
 	printf("Mark 3: %d\n", student->marks[2]);*/
 	
 	freadString(file, student->name, MAX_STUDENT_LAST_NAME_LENGTH);
+
+	current = fgetc(file);
+
+	if (current == EOF) return 0;
+
+	student->inWG = (char)current;
+
+	if (student->inWG) {
+		fread(&student->livingIn.wgId, sizeof(int), 1, file);
+	}
+	else {
+		freadString(file, student->livingIn.address, MAX_STUDENT_ADDRESS_LENGTH);
+	}
 	
 	return 1;
 	
@@ -463,7 +536,7 @@ void freadString(FILE *file, char *str, unsigned int maxLength) {
 			
 		}
 		
-		str[i] = current;
+		str[i] = (char)current;
 		
 	}
 	
@@ -489,7 +562,7 @@ int menu_view(char *fileName) {
 	long int offset = 0, i;
 	int choise;
 	char hasNextPage;
-	struct Student student;
+	student_t student;
 	
 	while (1) {
 		
