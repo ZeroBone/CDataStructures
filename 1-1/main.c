@@ -634,12 +634,9 @@ int menu_view(doublelinkedlist_t* students) {
 
         tableTop();
 
+        bool atTheEnd = false;
+
         for (i = 0; i < ROWS_PER_PAGE; i++) {
-
-            if (current->next == NULL) break;
-
-            current = current->next;
-            // offset++;
 
             /*printf("Student last name: ");
             puts(stud->name);
@@ -648,6 +645,18 @@ int menu_view(doublelinkedlist_t* students) {
             printf("Informatics mark: %d\n", stud->marks[2]);*/
 
             tableStudent(i + offset, (student_t*)dll_nodePayload(students, current));
+
+            if (current->next == NULL) {
+                atTheEnd = true;
+                break;
+            }
+
+            current = current->next;
+            // offset++;
+
+
+
+
 
         }
 
@@ -680,29 +689,40 @@ int menu_view(doublelinkedlist_t* students) {
             case 1:
                 /* scroll up */
 
-                for (i = 0; i < ROWS_PER_PAGE; i++) {
+                while (startingFrom->previous != NULL) {
+
+                    startingFrom = startingFrom->previous;
+                    offset--;
+
+                }
+
+                /*for (i = 0; i < ROWS_PER_PAGE; i++) {
 
                     if (current->previous == NULL) break;
 
                     current = current->previous;
                     offset--;
 
-                }
+                }*/
 
                 /*offset -= ROWS_PER_PAGE;*/
                 /*if (offset < 0) offset = 0;*/
+
+                // offset += ROWS_PER_PAGE;
 
                 break;
 
             case 2:
                 /* scroll down */
 
-                if (current->next == NULL) {
-                    printf("END\n");
+                // if (current->next == NULL) {
+                if (atTheEnd) {
+                    // printf("END\n");
                     break;
                 }
 
                 startingFrom = current;
+                offset += ROWS_PER_PAGE;
 
                 /*for (i = 0; i < ROWS_PER_PAGE; i++) {
 
