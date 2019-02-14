@@ -37,6 +37,7 @@ char readStudent(FILE *file, struct Student *student);
 unsigned long fwriteString(FILE *file, char *string);
 void freadString(FILE *file, char *str, unsigned int maxLength);
 int menu_view(doublelinkedlist_t* students);
+int menu_viewInBackOrder(doublelinkedlist_t* students);
 int menu_twosForAtLeast1Exam(doublelinkedlist_t* students);
 int menu_deleteExamResult(doublelinkedlist_t* students);
 int menu_twosForEveryDiscipline(doublelinkedlist_t* students);
@@ -261,22 +262,24 @@ int fileViewMenu(char *fileName) {
 
         puts("Введите нужный пункт меню:");
         puts("1 - просмотреть файл.");
-        puts("2 - добавить результат экзамена.");
-        puts("3 - удалить результат экзамена.");
-        puts("4 - посчитать количество двоек для каждой дисциплины.");
-        puts("5 - вывести студентов, у которых двойки хотя-бы по одному экзамену.");
-        puts("6 - вернуться в главное меню.");
+        puts("2 - просмотреть файл в обратном порядке.");
+        puts("3 - добавить результат экзамена.");
+        puts("4 - удалить результат экзамена.");
+        puts("5 - посчитать количество двоек для каждой дисциплины.");
+        puts("6 - вывести студентов, у которых двойки хотя-бы по одному экзамену.");
+        puts("7 - вернуться в главное меню.");
 
     }
     else {
 
         puts("Please enter a number below to select what you want to do:");
         puts("1 - view file.");
-        puts("2 - add exam result.");
-        puts("3 - delete an exam result.");
-        puts("4 - get the amount of 2-s for every discipline.");
-        puts("5 - get students, that have 2-s for at least 1 exam.");
-        puts("6 - return to the main menu.");
+        puts("2 - view file in reverse order.");
+        puts("3 - add exam result.");
+        puts("4 - delete an exam result.");
+        puts("5 - get the amount of 2-s for every discipline.");
+        puts("6 - get students, that have 2-s for at least 1 exam.");
+        puts("7 - return to the main menu.");
 
     }
 
@@ -296,6 +299,10 @@ int fileViewMenu(char *fileName) {
             return menu_view(&students);
 
         case 2:
+
+            return menu_viewInBackOrder(&students);
+
+        case 3:
 
             system("CLS");
 
@@ -369,7 +376,7 @@ int fileViewMenu(char *fileName) {
 
             break;
 
-        case 3:
+        case 4:
             /* delete an exam result */
 
             menu_deleteExamResult(&students);
@@ -378,19 +385,19 @@ int fileViewMenu(char *fileName) {
 
             break;
 
-        case 4:
+        case 5:
 
             /* get the amount of 2-s for every discipline */
 
             return menu_twosForEveryDiscipline(&students);
 
-        case 5:
+        case 6:
 
             /* get students, that have 2-s for at least 1 exam */
 
             return menu_twosForAtLeast1Exam(&students);
 
-        case 6:
+        case 7:
 
             system("CLS");
 
@@ -801,6 +808,136 @@ int menu_view(doublelinkedlist_t* students) {
 
 }
 
+int menu_viewInBackOrder(doublelinkedlist_t* students) {
+
+    doublelinkedlist_node_t* startingFrom = students->lastNode;
+
+    if (startingFrom == NULL) {
+
+        if (RU) puts("Файл пустой.");
+        else puts("File empty, nothing to view.");
+
+        return 1;
+
+    }
+
+    doublelinkedlist_node_t* current = startingFrom;
+    long elementCount = 0;
+
+    while (current != NULL) {
+
+        current = current->previous;
+
+        if (++elementCount == ROWS_PER_PAGE) {
+            break;
+        }
+
+    }
+
+    // printf("Element count: %ld\n", elementCount);
+
+    int i, offset = 0;
+
+    while (1) {
+
+        system("CLS");
+        current = startingFrom;
+
+        tableTop();
+
+        bool atTheStart = false;
+
+        for (i = 0; i < elementCount; i++) {
+
+            /*printf("Student last name: ");
+            puts(stud->name);
+            printf("Physics mark: %d\n", stud->marks[0]);
+            printf("Math mark: %d\n", stud->marks[1]);
+            printf("Informatics mark: %d\n", stud->marks[2]);*/
+
+            long id = elementCount - 1 - i + offset;
+
+            // tableStudent(ROWS_PER_PAGE - i + offset, (student_t*)dll_nodePayload(students, current));
+            tableStudent(id, (student_t*)dll_nodePayload(students, current));
+
+            if (current->previous == NULL) {
+                atTheStart = true;
+                break;
+            }
+
+            current = current->previous;
+            // offset++;
+        }
+
+        tableBottom();
+
+        if (RU) {
+
+            puts("В каком направлении прокрутить список?");
+            puts("1 - вверх.");
+            puts("2 - вниз.");
+            puts("3 - выход.");
+
+        }
+        else {
+
+            puts("Which direction do you want to scroll to?");
+            puts("1 - scroll up.");
+            puts("2 - scroll down.");
+            puts("3 - exit.");
+
+        }
+
+        int choise;
+        scanf("%d", &choise);
+
+        getchar();
+
+        switch (choise) {
+
+            case 1:
+                /* scroll up */
+
+                if (atTheStart) {
+                    // printf("END\n");
+                    break;
+                }
+
+                startingFrom = current;
+                offset += ROWS_PER_PAGE;
+
+                break;
+
+            case 2:
+                /* scroll down */
+
+                i = 0;
+                while (i < ROWS_PER_PAGE && startingFrom->next != NULL) {
+
+                    startingFrom = startingFrom->next;
+                    offset--;
+
+                    i++;
+
+                }
+
+                break;
+
+            default:
+
+                system("CLS");
+
+                goto exitMark;
+
+        }
+
+    }
+    exitMark:
+
+    return 1;
+
+}
+
 int menu_twosForAtLeast1Exam(doublelinkedlist_t* students) {
 
     doublelinkedlist_node_t* startingFrom = students->firstNode;
@@ -936,13 +1073,6 @@ int menu_twosForAtLeast1Exam(doublelinkedlist_t* students) {
 
 int menu_deleteExamResult(doublelinkedlist_t* students) {
 
-    if (RU) puts("Введите фамилию студента");
-    else puts("Enter student last name:");
-
-    char studentName[MAX_STUDENT_LAST_NAME_LENGTH];
-    fgets(studentName, MAX_STUDENT_LAST_NAME_LENGTH, stdin);
-    studentName[strlen(studentName) - 1] = '\0';
-
     system("CLS");
 
     doublelinkedlist_node_t* current = students->firstNode;
@@ -956,15 +1086,23 @@ int menu_deleteExamResult(doublelinkedlist_t* students) {
 
     }
 
-    int offset = 0;
+    if (RU) puts("Введите фамилию студента");
+    else puts("Enter student last name:");
 
-    while (current->next != NULL) {
+    char studentName[MAX_STUDENT_LAST_NAME_LENGTH];
+    fgets(studentName, MAX_STUDENT_LAST_NAME_LENGTH, stdin);
+    studentName[strlen(studentName) - 1] = '\0';
+
+    int offset = 0;
+    bool found = false;
+
+    while (current != NULL) {
 
         student_t* currentStudent = (student_t*)dll_nodePayload(students, current);
 
         if (!strcmp(currentStudent->name, studentName)) {
 
-            system("CLS");
+            found = true;
 
             tableTop();
 
@@ -983,6 +1121,8 @@ int menu_deleteExamResult(doublelinkedlist_t* students) {
 
             getchar();
 
+            system("CLS");
+
             if (yes == 'y' || yes == 'Y') {
                 // delete
 
@@ -992,13 +1132,26 @@ int menu_deleteExamResult(doublelinkedlist_t* students) {
 
                 current = next;
 
+                puts("Запись удалена.");
+
                 continue;
 
+            }
+            else {
+                puts("Удаление отменено.");
             }
 
         }
 
         current = current->next;
+
+    }
+
+    if (!found) {
+
+        system("cls");
+
+        puts("Не найдено ни одного студента с такой фамилией.");
 
     }
 
