@@ -241,7 +241,8 @@ int fileViewMenu(char *fileName) {
 
             }
 
-            student_t* s = (student_t*)dll_addNodeToBeginning(&students);
+            // student_t* s = (student_t*)dll_addNodeToBeginning(&students);
+            student_t* s = (student_t*)dll_addNodeToEnd(&students);
 
             if (s == NULL) break; // not a good thing to do
 
@@ -308,6 +309,7 @@ int fileViewMenu(char *fileName) {
 
             if (current == NULL) {
                 // we are adding to an empty file
+                printf("Adding '%s' to the beginning.\n", newStudent.name);
 
                 student = (student_t*)dll_addNodeToBeginning(&students);
 
@@ -320,7 +322,9 @@ int fileViewMenu(char *fileName) {
 
                     student_t* compareStudent = (student_t*)dll_nodePayload(&students, current);
 
-                    if (strcmp(newStudent.name, compareStudent->name) <= 0) {
+                    // printf("Comparing '%s' and current '%s'\n", newStudent.name, compareStudent->name);
+                    if (strcmp(newStudent.name, compareStudent->name) < 0) {
+                        // printf("Adding '%s' before '%s'\n", newStudent.name, compareStudent->name);
 
                         student = (student_t*)dll_insertNodeBefore(&students, current);
 
@@ -336,7 +340,22 @@ int fileViewMenu(char *fileName) {
 
                 // if (current->next == NULL) {
                 if (!foundNext) {
-                    student = (student_t*)dll_addNodeToEnd(&students);
+
+                    student_t* compareStudent = (student_t*)dll_nodePayload(&students, current);
+
+                    // printf("(2) Comparing '%s' and current '%s'\n", newStudent.name, compareStudent->name);
+                    if (strcmp(newStudent.name, compareStudent->name) < 0) {
+                        // printf("(2) Adding '%s' before '%s'\n", newStudent.name, compareStudent->name);
+
+                        student = (student_t*)dll_insertNodeBefore(&students, current);
+
+                    }
+                    else {
+                        // printf("Adding '%s' to the end.\n", newStudent.name);
+
+                        student = (student_t*)dll_addNodeToEnd(&students);
+                    }
+
                 }
 
             }
