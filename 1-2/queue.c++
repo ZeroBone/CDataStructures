@@ -24,9 +24,88 @@ class Queue {
 
 };
 
+typedef struct linkedlistqueue_node_s {
+    struct linkedlistqueue_node_s* next;
+} linkedlistqueue_node_t;
+
 class LinkedListQueue : public Queue {
 
+    private:
 
+    linkedlistqueue_node_t* top;
+    linkedlistqueue_node_t* bottom;
+
+    public:
+
+    explicit LinkedListQueue(const size_t payloadSize): Queue(payloadSize) {
+        top = nullptr;
+        bottom = nullptr;
+    }
+
+    virtual ~LinkedListQueue() {
+
+        while (!empty()) {
+
+            pollApply();
+
+        }
+
+    }
+
+    bool empty() override {
+        return top == nullptr; // could also check bottom, but it doesn't matter
+    }
+
+    void* push() override {
+
+        linkedlistqueue_node_t* memory = (linkedlistqueue_node_t*)malloc(sizeof(linkedlistqueue_node_t) + payloadSize);
+
+        if (memory == nullptr) {
+            return nullptr;
+        }
+
+        memory->next = nullptr;
+
+        if (top != nullptr) {
+
+            top->next = memory;
+
+        }
+        else {
+            // top == null, the queue is empty, we are pushing the first element
+            // bottom is null
+            bottom = memory;
+
+        }
+
+        top = memory;
+
+        return ((char*)memory) + sizeof(linkedlistqueue_node_t);
+
+    }
+
+    void* poll() override {
+
+        return bottom;
+
+    }
+
+    bool pollApply() override {
+
+        linkedlistqueue_node_t* bottomMemory = bottom;
+
+        bottom = bottom->next;
+
+        free(bottomMemory);
+
+        if (bottom == nullptr) {
+            // we've deleted the last element
+            top = nullptr;
+        }
+
+        return true;
+
+    }
 
 };
 
@@ -45,6 +124,16 @@ class VectorQueue : public Queue {
         if (allocated != 0) {
 
             memory = malloc(payloadSize * allocated);
+
+        }
+
+    }
+
+    virtual ~VectorQueue() {
+
+        if (allocated != 0) {
+
+            free(memory);
 
         }
 
