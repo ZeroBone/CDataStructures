@@ -1,6 +1,11 @@
 #include <iostream>
 
+typedef struct {
+    int c;
+    int e;
+} polynom_node_t;
+
 int main() {
-    std::cout << "Hello, World!" << std::endl;
+    std::cout << "Введите" << std::endl;
     return 0;
 }
