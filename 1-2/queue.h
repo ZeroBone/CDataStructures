@@ -21,6 +21,9 @@ class Queue {
     explicit Queue(const size_t payloadSize): payloadSize(payloadSize) {}
 
     public:
+    virtual ~Queue() = default;
+
+    public:
 
     virtual bool empty() = 0;
 
@@ -53,9 +56,7 @@ class LinkedListQueue : public Queue {
     virtual ~LinkedListQueue() {
 
         while (!empty()) {
-
             pollApply();
-
         }
 
     }
@@ -124,17 +125,18 @@ class VectorQueue : public Queue {
 
     private:
 
-    void* memory;
+    char* memory;
     size_t length;
     size_t allocated;
 
     public:
 
-    VectorQueue(const size_t payloadSize, const size_t capacity): Queue(payloadSize), allocated(capacity), length(0) {
+    explicit VectorQueue(const size_t payloadSize, const size_t capacity): Queue(payloadSize), allocated(capacity), length(0) {
 
         if (allocated != 0) {
 
-            memory = malloc(payloadSize * allocated);
+            memory = (char*)malloc(payloadSize * allocated);
+            // memory = new char[payloadSize * allocated];
 
         }
 
@@ -162,7 +164,7 @@ class VectorQueue : public Queue {
 
         }
 
-        return ((char*)memory) + (payloadSize * length++);
+        return memory + (payloadSize * length++);
 
     }
 
@@ -174,13 +176,28 @@ class VectorQueue : public Queue {
 
     bool pollApply() override {
 
-        memmove(
+        length--;
+
+        for (size_t i = 0; i < length; i++) {
+
+            memcpy(
+                memory + (i * payloadSize),
+                memory + ((i + 1) * payloadSize),
+                payloadSize
+            );
+
+            // *(memory + (i * payloadSize)) = *(memory + ((i + 1) * payloadSize));
+
+        }
+
+        /*memmove(
             memory,
             ((char*)memory) + payloadSize,
             --length
-        );
+        );*/
 
         return arraySnapped();
+        // return true;
 
     }
 
@@ -199,17 +216,17 @@ class VectorQueue : public Queue {
             newCapacity = length + 1;
         }
 
-        void* newMemory;
+        char* newMemory;
 
         if (allocated == 0) {
 
             // the array was initialized with initial capacity 0
-            newMemory = malloc(payloadSize * newCapacity);
+            newMemory = (char*)malloc(payloadSize * newCapacity);
 
         }
         else {
 
-            newMemory = realloc(memory, payloadSize * newCapacity);
+            newMemory = (char*)realloc(memory, payloadSize * newCapacity);
 
         }
 

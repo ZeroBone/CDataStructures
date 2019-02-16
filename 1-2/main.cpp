@@ -65,9 +65,7 @@ inline void printPolynom(Queue* polynom) {
         polynom->pollApply();
 
         if (polynom->empty()) {
-
             break;
-
         }
 
         if (((polynom_node_t*)polynom->poll())->c < 0) {
@@ -89,7 +87,7 @@ inline Queue* emptyPolynom(const bool linkedList) {
         return new LinkedListQueue(sizeof(polynom_node_t));
     }
 
-    return new VectorQueue(sizeof(polynom_node_t), 1);
+    return new VectorQueue(sizeof(polynom_node_t), 10);
 
 }
 
@@ -119,7 +117,6 @@ int main() {
     std::cout << "=================" << std::endl;
     /*std::cout << "ѕервый многочлен:" << std::endl;
     printPolynom(firstPolynom);*/
-
     std::cout << "¬ведите второй многочлен:" << std::endl;
 
     Queue* secondPolynom = emptyPolynom(useLinkedList);
