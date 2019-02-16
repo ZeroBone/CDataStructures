@@ -2,6 +2,8 @@
 #include <windows.h>
 #include "queue.h"
 
+#define DEBUG 0
+
 typedef struct {
     int c;
     int e;
@@ -9,7 +11,7 @@ typedef struct {
 
 inline void inputNode(polynom_node_t* node) {
 
-    std::cout << "Введите коеффициент при x: ";
+    std::cout << "Введите коэффициент при x: ";
     std::cin >> node->c;
 
     std::cout << "Введите степень: ";
@@ -25,6 +27,8 @@ inline bool inputPolynom(Queue* queue) {
     inputNode(&node);
 
     previousE = node.e;
+
+    *((polynom_node_t*)queue->push()) = node;
 
     while (node.e > 0) {
 
@@ -49,9 +53,13 @@ inline void printPolynom(Queue* polynom) {
 
     if (polynom->empty()) return;
 
+    if (((polynom_node_t*)polynom->poll())->c < 0) {
+        std::cout << "-";
+    }
+
     while (1) {
 
-        std::cout << ((polynom_node_t*)polynom->poll())->c;
+        std::cout << abs(((polynom_node_t*)polynom->poll())->c);
         std::cout << "x^" << ((polynom_node_t*)polynom->poll())->e;
 
         polynom->pollApply();
@@ -62,11 +70,26 @@ inline void printPolynom(Queue* polynom) {
 
         }
 
-        std::cout << " + ";
+        if (((polynom_node_t*)polynom->poll())->c < 0) {
+            std::cout << " - ";
+        }
+        else {
+            std::cout << " + ";
+        }
 
     }
 
     std::cout << std::endl;
+
+}
+
+inline Queue* emptyPolynom(const bool linkedList) {
+
+    if (linkedList) {
+        return new LinkedListQueue(sizeof(polynom_node_t));
+    }
+
+    return new VectorQueue(sizeof(polynom_node_t), 1);
 
 }
 
@@ -77,47 +100,82 @@ int main() {
     SetConsoleCP(1251);
     SetConsoleOutputCP(1251);
 
+    std::cout << "Укажите структуру хранения:" << std::endl;
+    std::cout << "0 - векторная" << std::endl;
+    std::cout << "1 - списковая" << std::endl;
+
+    bool useLinkedList;
+    std::cin >> useLinkedList;
+
     std::cout << "Введите первый многочлен:" << std::endl;
 
-    Queue* firstPolynom = new LinkedListQueue(sizeof(polynom_node_t));
+    Queue* firstPolynom = emptyPolynom(useLinkedList);
 
     if (!inputPolynom(firstPolynom)) {
         system("pause");
         return 1;
     }
 
-    std::cout << "Первый многочлен:" << std::endl;
-    printPolynom(firstPolynom);
+    std::cout << "=================" << std::endl;
+    /*std::cout << "Первый многочлен:" << std::endl;
+    printPolynom(firstPolynom);*/
+
     std::cout << "Введите второй многочлен:" << std::endl;
 
-    Queue* secondPolynom = new LinkedListQueue(sizeof(polynom_node_t));
+    Queue* secondPolynom = emptyPolynom(useLinkedList);
 
     if (!inputPolynom(secondPolynom)) {
         system("pause");
         return 1;
     }
 
-    Queue* biggerPolynom;
-    Queue* smallerPolynom;
+    std::cout << "=================" << std::endl;
+    /*std::cout << "Второй многочлен:" << std::endl;
+    printPolynom(secondPolynom);*/
 
-    if (((polynom_node_t*)secondPolynom->poll())->e > ((polynom_node_t*)firstPolynom->poll())->e) {
-        biggerPolynom = secondPolynom;
-        smallerPolynom = firstPolynom;
+    Queue* resultPolynom = emptyPolynom(useLinkedList);
+
+    // do the polynom subtraction
+
+    while (!firstPolynom->empty() && !secondPolynom->empty()) {
+#if DEBUG == 1
+        std::cout << "First e: " << ((polynom_node_t*)firstPolynom->poll())->e << "Second e: " << ((polynom_node_t*)secondPolynom->poll())->e << std::endl;
+#endif
+        if (((polynom_node_t*)firstPolynom->poll())->e == ((polynom_node_t*)secondPolynom->poll())->e) {
+
+            polynom_node_t* newNode = (polynom_node_t*)resultPolynom->push();
+
+            newNode->e = ((polynom_node_t*)firstPolynom->poll())->e;
+            newNode->c = ((polynom_node_t*)firstPolynom->poll())->c - ((polynom_node_t*)secondPolynom->poll())->c;
+
+            firstPolynom->pollApply();
+            secondPolynom->pollApply();
+
+        }
+        else if (((polynom_node_t*)firstPolynom->poll())->e > ((polynom_node_t*)secondPolynom->poll())->e) {
+
+            *((polynom_node_t*)resultPolynom->push()) = *((polynom_node_t*)firstPolynom->poll());
+
+            firstPolynom->pollApply();
+
+        }
+        else {
+
+            polynom_node_t* newNode = (polynom_node_t*)resultPolynom->push();
+
+            newNode->c = -((polynom_node_t*)secondPolynom->poll())->c;
+            newNode->e = ((polynom_node_t*)secondPolynom->poll())->e;
+
+            secondPolynom->pollApply();
+
+        }
+
     }
-    else {
-        smallerPolynom = secondPolynom;
-        biggerPolynom = firstPolynom;
-    }
 
-    Queue* resultPolynom = new LinkedListQueue(sizeof(polynom_node_t));
+    // output result
 
-    while (((polynom_node_t*)biggerPolynom->poll())->e > ((polynom_node_t*)smallerPolynom->poll())->e) {
-
-        *((polynom_node_t*)(resultPolynom->push())) = *((polynom_node_t*)biggerPolynom->poll());
-
-        biggerPolynom->pollApply();
-
-    }
+    std::cout << "Результат вычитания:" << std::endl;
+    printPolynom(resultPolynom);
 
     delete firstPolynom;
     delete secondPolynom;

@@ -1,7 +1,7 @@
 #ifndef INC_1_2_QUEUE_H
 #define INC_1_2_QUEUE_H
 
-#define DEBUG 1
+#define DEBUG 0
 
 #if DEBUG == 1
 #include <iostream>
@@ -66,8 +66,9 @@ class LinkedListQueue : public Queue {
 
     void* push() override {
 
-        std::cout << "Payload size: " << payloadSize << std::endl;
-
+#if DEBUG == 1
+        std::cout << "Pushing... (payload size: " << payloadSize << ")" << std::endl;
+#endif
         linkedlistqueue_node_t* memory = (linkedlistqueue_node_t*)malloc(sizeof(linkedlistqueue_node_t) + payloadSize);
 
         if (memory == nullptr) {
@@ -76,15 +77,15 @@ class LinkedListQueue : public Queue {
 
         memory->next = nullptr;
 
-        if (top != nullptr) {
-
-            top->next = memory;
-
-        }
-        else {
+        if (top == nullptr) {
             // top == null, the queue is empty, we are pushing the first element
             // bottom is null
             bottom = memory;
+
+        }
+        else {
+
+            top->next = memory;
 
         }
 
@@ -96,7 +97,7 @@ class LinkedListQueue : public Queue {
 
     void* poll() override {
 
-        return bottom;
+        return ((char*)bottom) + sizeof(linkedlistqueue_node_t);
 
     }
 
@@ -155,6 +156,12 @@ class VectorQueue : public Queue {
 
     void* push() override {
 
+        if (length == allocated) { // better to use >=, but as we never add more than one element at a time, this is safe
+
+            if (!resize(allocated * ARR_DEFAULT_SCALING_FACTOR)) return nullptr; // couldn't resize array
+
+        }
+
         return ((char*)memory) + (payloadSize * length++);
 
     }
@@ -186,7 +193,11 @@ class VectorQueue : public Queue {
 
     }
 
-    bool resize(const size_t newCapacity) {
+    bool resize(size_t newCapacity) {
+
+        if (newCapacity == 0) {
+            newCapacity = length + 1;
+        }
 
         void* newMemory;
 
