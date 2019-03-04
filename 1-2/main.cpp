@@ -51,7 +51,10 @@ inline bool inputPolynom(Queue* queue) {
 
 inline void printPolynom(Queue* polynom) {
 
-    if (polynom->empty()) return;
+    if (polynom->empty()) {
+        std::cout << "0" << std::endl;
+        return;
+    }
 
     if (((polynom_node_t*)polynom->poll())->c < 0) {
         std::cout << "-";
@@ -60,7 +63,17 @@ inline void printPolynom(Queue* polynom) {
     while (1) {
 
         std::cout << abs(((polynom_node_t*)polynom->poll())->c);
-        std::cout << "x^" << ((polynom_node_t*)polynom->poll())->e;
+
+        if (((polynom_node_t*)polynom->poll())->e != 0) {
+
+            if (((polynom_node_t*)polynom->poll())->e == 1) {
+                std::cout << "x";
+            }
+            else {
+                std::cout << "x^" << ((polynom_node_t*)polynom->poll())->e;
+            }
+
+        }
 
         polynom->pollApply();
 
@@ -138,12 +151,20 @@ int main() {
 #if DEBUG == 1
         std::cout << "First e: " << ((polynom_node_t*)firstPolynom->poll())->e << "Second e: " << ((polynom_node_t*)secondPolynom->poll())->e << std::endl;
 #endif
+
+        /*if (((polynom_node_t*)secondPolynom->poll())->c == 0) {
+            secondPolynom->pollApply();
+            continue;
+        }*/
+
+        polynom_node_t newNode;
+
         if (((polynom_node_t*)firstPolynom->poll())->e == ((polynom_node_t*)secondPolynom->poll())->e) {
 
-            polynom_node_t* newNode = (polynom_node_t*)resultPolynom->push();
+            // polynom_node_t* newNode = (polynom_node_t*)resultPolynom->push();
 
-            newNode->e = ((polynom_node_t*)firstPolynom->poll())->e;
-            newNode->c = ((polynom_node_t*)firstPolynom->poll())->c - ((polynom_node_t*)secondPolynom->poll())->c;
+            newNode.e = ((polynom_node_t*)firstPolynom->poll())->e;
+            newNode.c = ((polynom_node_t*)firstPolynom->poll())->c - ((polynom_node_t*)secondPolynom->poll())->c;
 
             firstPolynom->pollApply();
             secondPolynom->pollApply();
@@ -151,23 +172,32 @@ int main() {
         }
         else if (((polynom_node_t*)firstPolynom->poll())->e > ((polynom_node_t*)secondPolynom->poll())->e) {
 
-            *((polynom_node_t*)resultPolynom->push()) = *((polynom_node_t*)firstPolynom->poll());
+            // *((polynom_node_t*)resultPolynom->push()) = *((polynom_node_t*)firstPolynom->poll());
+            newNode = *((polynom_node_t*)firstPolynom->poll());
 
             firstPolynom->pollApply();
 
         }
         else {
 
-            polynom_node_t* newNode = (polynom_node_t*)resultPolynom->push();
+            // polynom_node_t* newNode = (polynom_node_t*)resultPolynom->push();
 
-            newNode->c = -((polynom_node_t*)secondPolynom->poll())->c;
-            newNode->e = ((polynom_node_t*)secondPolynom->poll())->e;
+            newNode.c = -((polynom_node_t*)secondPolynom->poll())->c;
+            newNode.e = ((polynom_node_t*)secondPolynom->poll())->e;
 
             secondPolynom->pollApply();
 
         }
 
+        if (newNode.c != 0) {
+            *((polynom_node_t*)resultPolynom->push()) = newNode;
+        }
+
     }
+
+//    while (((polynom_node_t*)resultPolynom->poll())->c == 0) {
+//        resultPolynom->pollApply();
+//    }
 
     // output result
 

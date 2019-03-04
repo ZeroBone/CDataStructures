@@ -126,57 +126,56 @@ class VectorQueue : public Queue {
     private:
 
     char* memory;
-    size_t length;
-    size_t allocated;
+    size_t capacity;
+    int top;
+    int bottom;
 
     public:
 
-    explicit VectorQueue(const size_t payloadSize, const size_t capacity): Queue(payloadSize), allocated(capacity), length(0) {
+    explicit VectorQueue(const size_t payloadSize, const size_t capacity):
+        Queue(payloadSize), capacity(capacity), top(0), bottom(0) {
 
-        if (allocated != 0) {
+        memory = new char[payloadSize * capacity];
 
-            memory = (char*)malloc(payloadSize * allocated);
-            // memory = new char[payloadSize * allocated];
-
-        }
+        // memory = (char*)malloc(payloadSize * capacity);
 
     }
 
     virtual ~VectorQueue() {
 
-        if (allocated != 0) {
-
-            free(memory);
-
-        }
+        delete memory;
 
     }
 
     bool empty() override {
-        return length == 0;
+        return top == bottom;
     }
 
     void* push() override {
 
-        if (length == allocated) { // better to use >=, but as we never add more than one element at a time, this is safe
+        int oldTop = top;
 
-            if (!resize(allocated * ARR_DEFAULT_SCALING_FACTOR)) return nullptr; // couldn't resize array
+        int newTop = (top + 1) % capacity;
 
+        if (newTop == bottom) {
+            return nullptr;
         }
 
-        return memory + (payloadSize * length++);
+        top = newTop;
+
+        return memory + (payloadSize * oldTop);
 
     }
 
     void* poll() override {
 
-        return memory;
+        return memory + (payloadSize * bottom);
 
     }
 
     bool pollApply() override {
 
-        length--;
+        /*length--;
 
         for (size_t i = 0; i < length; i++) {
 
@@ -188,7 +187,7 @@ class VectorQueue : public Queue {
 
             // *(memory + (i * payloadSize)) = *(memory + ((i + 1) * payloadSize));
 
-        }
+        }*/
 
         /*memmove(
             memory,
@@ -196,14 +195,18 @@ class VectorQueue : public Queue {
             --length
         );*/
 
-        return arraySnapped();
+        // return arraySnapped();
         // return true;
+
+        bottom = (bottom + 1) % capacity;
+
+        return true;
 
     }
 
     private:
 
-    bool arraySnapped() {
+    /*bool arraySnapped() {
 
         return length <= allocated / ARR_DEFAULT_SCALING_FACTOR ?
                resize(allocated / ARR_DEFAULT_SCALING_FACTOR) : true;
@@ -238,7 +241,7 @@ class VectorQueue : public Queue {
 
         return true;
 
-    }
+    }*/
 
 };
 
