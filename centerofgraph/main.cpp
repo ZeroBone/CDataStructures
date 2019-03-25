@@ -165,8 +165,22 @@ void MatrixOrientedGraph::findShortestRoutes() {
 
 weight_t* MatrixOrientedGraph::sumUpToFindEs() {
 
-    weight_t* es = new weight_t[nodes];
+    weight_t* rowSums = new weight_t[nodes];
 
+    for (size_t y = 0; y < nodes; y++) {
+        rowSums[y] = matrix[y][0];
+    }
+
+    for (size_t y = 0; y < nodes; y++) {
+        for (size_t x = 1; x < nodes; x++) {
+            rowSums[y] += matrix[y][x];
+        }
+    }
+
+    return rowSums;
+
+    /*
+    weight_t* es = new weight_t[nodes];
     memcpy(es, matrix[0], nodes * sizeof(weight_t));
 
     for (size_t x = 0; x < nodes; x++) {
@@ -178,6 +192,7 @@ weight_t* MatrixOrientedGraph::sumUpToFindEs() {
     }
 
     return es;
+     */
 
 }
 
@@ -303,7 +318,20 @@ int main() {
         graph->debugPrint();
 
         weight_t* e = ((MatrixOrientedGraph*)graph)->sumUpToFindEs();
-        for (size_t i = 0; i < graph->nodes; i++) {
+
+        size_t minRowIndex = 0;
+        for (size_t i = 1; i < graph->nodes; i++) {
+            if (e[i]< e[minRowIndex]) {
+                minRowIndex = i;
+            }
+        }
+
+        /*std::cout << "Graph mediane: ";
+        OrientedGraph::printWeight(e[minRowIndex]);
+        std::cout << std::endl;*/
+        std::cout << "Graph mediane: " << minRowIndex + 1 << std::endl;
+
+        /*for (size_t i = 0; i < graph->nodes; i++) {
             std::cout << "e(" << i + 1 << ") = ";
             OrientedGraph::printWeight(e[i]);
             std::cout << std::endl;
@@ -321,7 +349,7 @@ int main() {
         std::cout << std::endl;
 
         std::cout << "Center of graph: " << radiusIndex + 1 << std::endl;
-        std::cout << "Edge of graph: " << diameterIndex + 1 << std::endl;
+        std::cout << "Edge of graph: " << diameterIndex + 1 << std::endl;*/
 
         delete[] e;
 
