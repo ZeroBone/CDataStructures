@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <utility>
 
 // #define WEIGHT_INFINITY std::numeric_limits<weight_t>::max()
 #define WEIGHT_INFINITY 1000000
@@ -248,6 +249,63 @@ public:
 
     void debugPrint() override;
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wuninitialized"
+    weight_t* dijkstraMinPathLength(size_t startNode) {
+
+        weight_t* d = new weight_t[nodes];
+        bool* used = new bool[nodes];
+
+        for (size_t i = 0; i < nodes; i++) {
+
+            d[i] = WEIGHT_INFINITY;
+            used[i] = false;
+
+        }
+
+        d[startNode] = 0;
+
+        for (size_t i = 0; i < nodes; i++) {
+            size_t v;
+            bool vFound = false;
+
+            for (size_t j = 0; j < nodes; j++) {
+                if (!used[j] && (!vFound || d[j] < d[v])) {
+                    v = j;
+                    vFound = true;
+                }
+            }
+
+            if (d[v] == WEIGHT_INFINITY) {
+                break;
+            }
+
+            used[v] = true;
+
+            for (std::pair<size_t, weight_t> e : list[v]) {
+                // e.first - node id
+                // e.second - weight
+
+                if (d[v] + e.second < d[e.first]) {
+                    d[e.first] = d[v] + e.second;
+                }
+
+            }
+
+        }
+
+        std::cout << "Min path length: ";
+
+        for (size_t i = 0; i < nodes; i++) {
+            std::cout << d[i] << ' ';
+        }
+        std::cout << std::endl;
+
+        return d;
+
+    }
+#pragma clang diagnostic pop
+
 };
 
 void ListOrientedGraph::debugPrint() {
@@ -357,13 +415,13 @@ int main() {
     else {
         // list graph implementation
 
+        ((ListOrientedGraph*)graph)->dijkstraMinPathLength(0);
 
+}
 
-    }
+delete graph;
 
-    delete graph;
+system("pause");
 
-    system("pause");
-
-    return 0;
+return 0;
 }
