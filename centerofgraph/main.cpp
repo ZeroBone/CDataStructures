@@ -227,6 +227,182 @@ size_t MatrixOrientedGraph::findDiameter(const weight_t* e) {
 
 //////////////////////////////
 
+class TriangleMatrixOrientedGraph : public OrientedGraph {
+
+private:
+    weight_t** matrix;
+
+public:
+    explicit TriangleMatrixOrientedGraph(const size_t nodes): OrientedGraph(nodes) {
+
+        matrix = new weight_t*[nodes];
+
+        for (size_t i = 0; i < nodes; i++) {
+            matrix[i] = new weight_t[i + 1];
+
+            size_t j;
+            for (j = 0; j < i; j++) {
+                matrix[i][j] = WEIGHT_INFINITY;
+            }
+
+            matrix[i][j] = 0;
+
+        }
+
+    }
+
+    ~TriangleMatrixOrientedGraph() override {
+
+        for (size_t i = 0; i < nodes; i++) {
+            delete matrix[i];
+        }
+
+        delete[] matrix;
+
+    }
+
+    void createPath(size_t i, size_t j, const weight_t weight) override {
+
+        if (j > i) {
+            i ^= j;
+            j ^= i;
+            i ^= j;
+        }
+
+        matrix[i][j] = weight;
+    }
+
+    void debugPrint() override;
+
+    void findShortestRoutes();
+
+    weight_t* sumUpToFindEs();
+
+};
+
+void TriangleMatrixOrientedGraph::debugPrint() {
+
+    std::cout << "  |";
+
+    for (size_t i = 0; i < nodes; i++) {
+        printf("%2u    ", (unsigned int)i + 1);
+    }
+
+    std::cout << std::endl;
+    std::cout << "--+";
+
+    for (size_t i = 0; i < nodes; i++) {
+        std::cout << "-----";
+        if (i != nodes - 1) {
+            std::cout << '-';
+        }
+    }
+
+    std::cout << std::endl;
+
+    for (size_t i = 0; i < nodes; i++) {
+
+        printf("%2d|", (unsigned int)i + 1);
+
+        for (size_t j = 0; j < nodes; j++) {
+
+            if (j > i) {
+                break;
+            }
+            else if (matrix[i][j] == WEIGHT_INFINITY) {
+                std::cout << "INF  ";
+            }
+            else {
+                printf("%2d   ", matrix[i][j]);
+            }
+
+            if (j != nodes - 1) {
+                std::cout << ' ';
+            }
+
+        }
+
+        std::cout << std::endl;
+
+    }
+
+    std::cout << "--+";
+
+    for (size_t i = 0; i < nodes; i++) {
+        std::cout << "-----";
+        if (i != nodes - 1) {
+            std::cout << '-';
+        }
+    }
+
+    std::cout << std::endl;
+
+}
+
+void TriangleMatrixOrientedGraph::findShortestRoutes() {
+    // Floyd-Warshall algorithm
+
+    // for each phase
+    /*for (size_t k = 0; k < nodes; k++) {
+        for (size_t i = 0; i < nodes; i++) {
+            for (size_t j = 0; j < nodes; j++) {
+                if (matrix[i][k] + matrix[k][j] < matrix[i][j]) {
+                    matrix[i][j] = matrix[i][k] + matrix[k][j];
+                }
+            }
+        }
+    }*/
+
+    for (size_t k = 0; k < nodes; k++) {
+        for (size_t i = 0; i < nodes; i++) {
+            for (size_t j = 0; j < nodes; j++) {
+
+                weight_t a = k > i ? matrix[k][i] : matrix[i][k];
+                weight_t b = k > j ? matrix[k][j] : matrix[j][k];
+                weight_t* current = j > i ? &matrix[j][i] : &matrix[i][j];
+
+                /*if (matrix[i][k] + matrix[k][j] < matrix[i][j]) {
+                    matrix[i][j] = matrix[i][k] + matrix[k][j];
+                }*/
+
+                if (a + b < *current) {
+                    *current = a + b;
+                }
+
+            }
+        }
+    }
+
+}
+
+weight_t* TriangleMatrixOrientedGraph::sumUpToFindEs() {
+
+    weight_t* rowSums = new weight_t[nodes];
+
+    for (size_t y = 0; y < nodes; y++) {
+        rowSums[y] = matrix[y][0];
+    }
+
+    for (size_t y = 0; y < nodes; y++) {
+
+        for (size_t x = 1; x < y; x++) {
+            rowSums[y] += matrix[y][x];
+        }
+
+        if (y >= nodes / 2) {
+            weight_t correspondingRowSum = rowSums[nodes - 1 - y];
+            rowSums[nodes - 1 - y] += rowSums[y];
+            rowSums[y] += correspondingRowSum;
+        }
+
+    }
+
+    return rowSums;
+
+}
+
+//////////////////////////////
+
 class ListOrientedGraph : public OrientedGraph {
 
 private:
@@ -325,6 +501,12 @@ void ListOrientedGraph::debugPrint() {
 
 #undef WEIGHT_INFINITY
 
+typedef enum {
+    IMPL_MATRIX,
+    IMPL_TRIANGLE_MATRIX,
+    IMPL_LIST
+} graph_implementation_t;
+
 int main() {
 
     std::ifstream citiesFile("cities.txt");
@@ -334,18 +516,31 @@ int main() {
 
     std::cout << "There are " << citiesCount << " cities." << std::endl;
 
-    bool useMatrixGraphImpl;
+    graph_implementation_t impl;
 
     {
         char graphType;
+
         citiesFile >> graphType;
-        useMatrixGraphImpl = graphType == 'm';
+
+        if (graphType == 'm') {
+            impl = IMPL_MATRIX;
+        }
+        else if (graphType == 't') {
+            impl = IMPL_TRIANGLE_MATRIX;
+        }
+        else {
+            impl = IMPL_LIST;
+        }
     }
 
     OrientedGraph* graph;
 
-    if (useMatrixGraphImpl) {
+    if (impl == IMPL_MATRIX) {
         graph = new MatrixOrientedGraph(citiesCount);
+    }
+    else if (impl == IMPL_TRIANGLE_MATRIX) {
+        graph = new TriangleMatrixOrientedGraph(citiesCount);
     }
     else {
         graph = new ListOrientedGraph(citiesCount);
@@ -368,7 +563,7 @@ int main() {
     std::cout << "Graph:" << std::endl;
     graph->debugPrint();
 
-    if (useMatrixGraphImpl) {
+    if (impl == IMPL_MATRIX) {
 
         ((MatrixOrientedGraph*)graph)->findShortestRoutes();
 
@@ -377,17 +572,29 @@ int main() {
 
         weight_t* e = ((MatrixOrientedGraph*)graph)->sumUpToFindEs();
 
+        std::cout << "Row sums:" << std::endl;
+
         size_t minRowIndex = 0;
-        for (size_t i = 1; i < graph->nodes; i++) {
-            if (e[i]< e[minRowIndex]) {
+        for (size_t i = 0; i < graph->nodes; i++) {
+
+            std::cout << e[i];
+
+            if (e[i] < e[minRowIndex]) {
                 minRowIndex = i;
             }
+
+            if (i != graph->nodes - 1) {
+                std::cout << ' ';
+            }
+
         }
 
-        /*std::cout << "Graph mediane: ";
+        std::cout << std::endl;
+
+        std::cout << "Graph mediane node: " << minRowIndex + 1 << std::endl;
+        std::cout << "Graph mediane: ";
         OrientedGraph::printWeight(e[minRowIndex]);
-        std::cout << std::endl;*/
-        std::cout << "Graph mediane: " << minRowIndex + 1 << std::endl;
+        std::cout << std::endl;
 
         /*for (size_t i = 0; i < graph->nodes; i++) {
             std::cout << "e(" << i + 1 << ") = ";
@@ -408,6 +615,39 @@ int main() {
 
         std::cout << "Center of graph: " << radiusIndex + 1 << std::endl;
         std::cout << "Edge of graph: " << diameterIndex + 1 << std::endl;*/
+
+        delete[] e;
+
+    }
+    else if (impl == IMPL_TRIANGLE_MATRIX) {
+
+        ((TriangleMatrixOrientedGraph*)graph)->findShortestRoutes();
+
+        std::cout << "Shortest routes:" << std::endl;
+        graph->debugPrint();
+
+        weight_t* e = ((TriangleMatrixOrientedGraph*)graph)->sumUpToFindEs();
+
+        std::cout << "Row sums:" << std::endl;
+
+        size_t minRowIndex = 0;
+        for (size_t i = 0; i < graph->nodes; i++) {
+
+            std::cout << e[i];
+
+            if (e[i] < e[minRowIndex]) {
+                minRowIndex = i;
+            }
+
+            if (i != graph->nodes - 1) {
+                std::cout << ' ';
+            }
+
+        }
+
+        std::cout << std::endl;
+
+        std::cout << "Graph mediane: " << minRowIndex + 1 << std::endl;
 
         delete[] e;
 
@@ -435,7 +675,7 @@ int main() {
 
         size_t minRowIndex = 0;
         for (size_t i = 1; i < graph->nodes; i++) {
-            if (matrixRowsSums[i]< matrixRowsSums[minRowIndex]) {
+            if (matrixRowsSums[i] < matrixRowsSums[minRowIndex]) {
                 minRowIndex = i;
             }
         }
