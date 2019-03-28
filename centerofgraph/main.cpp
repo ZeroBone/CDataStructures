@@ -294,12 +294,12 @@ public:
 
         }
 
-        std::cout << "Min path length: ";
+        /*std::cout << "Min path length: ";
 
         for (size_t i = 0; i < nodes; i++) {
             std::cout << d[i] << ' ';
         }
-        std::cout << std::endl;
+        std::cout << std::endl;*/
 
         return d;
 
@@ -415,13 +415,39 @@ int main() {
     else {
         // list graph implementation
 
-        ((ListOrientedGraph*)graph)->dijkstraMinPathLength(0);
+        weight_t* matrixRowsSums = new weight_t[graph->nodes];
 
-}
+        for (size_t i = 0; i < graph->nodes; i++) {
 
-delete graph;
+            weight_t* distances = ((ListOrientedGraph*)graph)->dijkstraMinPathLength(i);
 
-system("pause");
+            matrixRowsSums[i] = distances[0];
 
-return 0;
+            for (size_t j = 1; j < graph->nodes; j++) {
+
+                matrixRowsSums[i] += distances[j];
+
+            }
+
+            delete[] distances;
+
+        }
+
+        size_t minRowIndex = 0;
+        for (size_t i = 1; i < graph->nodes; i++) {
+            if (matrixRowsSums[i]< matrixRowsSums[minRowIndex]) {
+                minRowIndex = i;
+            }
+        }
+
+        std::cout << "Graph mediane: " << minRowIndex + 1 << std::endl;
+
+    }
+
+    delete graph;
+
+    system("pause");
+
+    return 0;
+
 }
