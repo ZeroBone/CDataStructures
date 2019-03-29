@@ -7,6 +7,24 @@
 #define WEIGHT_INFINITY 1000000
 typedef unsigned int weight_t;
 
+/////////////////////////////////////////
+
+typedef struct linkedlist_node_s {
+    struct linkedlist_node_s* previous;
+    struct linkedlist_node_s* next;
+} doublelinkedlist_node_t;
+
+template <class T>
+class LinkedList {
+
+public:
+    T* firstNode;
+    T* lastNode;
+
+};
+
+/////////////////////////////////////////
+
 class OrientedGraph {
 
 public:
@@ -237,15 +255,14 @@ public:
 
         matrix = new weight_t*[nodes];
 
-        for (size_t i = 0; i < nodes; i++) {
-            matrix[i] = new weight_t[i + 1];
+        matrix[0] = nullptr;
 
-            size_t j;
-            for (j = 0; j < i; j++) {
+        for (size_t i = 1; i < nodes; i++) {
+            matrix[i] = new weight_t[i];
+
+            for (size_t j = 0; j < i; j++) {
                 matrix[i][j] = WEIGHT_INFINITY;
             }
-
-            matrix[i][j] = 0;
 
         }
 
@@ -253,8 +270,8 @@ public:
 
     ~TriangleMatrixOrientedGraph() override {
 
-        for (size_t i = 0; i < nodes; i++) {
-            delete matrix[i];
+        for (size_t i = 1; i < nodes; i++) {
+            delete[] matrix[i];
         }
 
         delete[] matrix;
@@ -306,8 +323,16 @@ void TriangleMatrixOrientedGraph::debugPrint() {
 
         for (size_t j = 0; j < nodes; j++) {
 
-            if (j > i) {
-                break;
+            if (j == i) {
+                printf("%2d   ", 0);
+            }
+            else if (j >= i) {
+                if (matrix[j][i] == WEIGHT_INFINITY) {
+                    std::cout << "INF  ";
+                }
+                else {
+                    printf("%2d   ", matrix[j][i]);
+                }
             }
             else if (matrix[i][j] == WEIGHT_INFINITY) {
                 std::cout << "INF  ";
@@ -355,18 +380,20 @@ void TriangleMatrixOrientedGraph::findShortestRoutes() {
 
     for (size_t k = 0; k < nodes; k++) {
         for (size_t i = 0; i < nodes; i++) {
-            for (size_t j = 0; j < nodes; j++) {
-
-                weight_t a = k > i ? matrix[k][i] : matrix[i][k];
-                weight_t b = k > j ? matrix[k][j] : matrix[j][k];
-                weight_t* current = j > i ? &matrix[j][i] : &matrix[i][j];
+            for (size_t j = 0; j < i; j++) {
 
                 /*if (matrix[i][k] + matrix[k][j] < matrix[i][j]) {
                     matrix[i][j] = matrix[i][k] + matrix[k][j];
                 }*/
 
-                if (a + b < *current) {
-                    *current = a + b;
+                // std::cout << "I: " << i << " J: " << j << " K: " << k << std::endl;
+
+                weight_t a = k > i ? matrix[k][i] : matrix[i][k];
+                weight_t b = k > j ? matrix[k][j] : j == 0 ? 0 : matrix[j][k];
+                // weight_t* current = j > i ? &matrix[j][i] : &matrix[i][j];
+
+                if (a + b < matrix[i][j]) {
+                    matrix[i][j] = a + b;
                 }
 
             }
@@ -379,7 +406,8 @@ weight_t* TriangleMatrixOrientedGraph::sumUpToFindEs() {
 
     weight_t* rowSums = new weight_t[nodes];
 
-    for (size_t y = 0; y < nodes; y++) {
+    rowSums[0] = 0;
+    for (size_t y = 1; y < nodes; y++) {
         rowSums[y] = matrix[y][0];
     }
 
@@ -389,11 +417,15 @@ weight_t* TriangleMatrixOrientedGraph::sumUpToFindEs() {
             rowSums[y] += matrix[y][x];
         }
 
-        if (y >= nodes / 2) {
+        for (size_t x = y + 1; x < nodes; x++) {
+            rowSums[y] += matrix[x][y];
+        }
+
+        /*if (y >= nodes / 2) {
             weight_t correspondingRowSum = rowSums[nodes - 1 - y];
             rowSums[nodes - 1 - y] += rowSums[y];
             rowSums[y] += correspondingRowSum;
-        }
+        }*/
 
     }
 
@@ -402,6 +434,11 @@ weight_t* TriangleMatrixOrientedGraph::sumUpToFindEs() {
 }
 
 //////////////////////////////
+
+/*typedef struct {
+    size_t index;
+    weight_t weight;
+} listorgraphel_t;*/
 
 class ListOrientedGraph : public OrientedGraph {
 
