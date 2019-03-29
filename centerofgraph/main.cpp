@@ -1,46 +1,161 @@
 #include <iostream>
 #include <fstream>
-#include <vector>
-#include <utility>
-
-// #define WEIGHT_INFINITY std::numeric_limits<weight_t>::max()
-#define WEIGHT_INFINITY 1000000
-typedef unsigned int weight_t;
 
 /////////////////////////////////////////
 
-typedef struct linkedlist_node_s {
-    struct linkedlist_node_s* previous;
+template <class T>
+class LinkedList;
+
+template <class T>
+struct linkedlist_node_s {
+public:
+    T payload;
     struct linkedlist_node_s* next;
-} doublelinkedlist_node_t;
+};
 
 template <class T>
 class LinkedList {
 
 public:
-    T* firstNode;
-    T* lastNode;
+    linkedlist_node_s<T>* firstNode;
+    linkedlist_node_s<T>* lastNode;
+
+    explicit LinkedList() : firstNode(nullptr), lastNode(nullptr) {}
+
+    ~LinkedList() {
+
+        linkedlist_node_s<T>* current = firstNode;
+
+        while (current != nullptr) {
+
+            linkedlist_node_s<T>* temp = current;
+
+            current = current->next;
+
+            delete temp;
+
+        }
+
+    }
+
+    bool empty() const {
+        return firstNode == nullptr;
+    }
+
+    linkedlist_node_s<T>* addNodeToBeginning();
+    linkedlist_node_s<T>* addNodeToEnd();
+    linkedlist_node_s<T>* addNodeAfter(linkedlist_node_s<T>* afterNode);
+    void deleteFirstNode();
 
 };
 
+template <class T>
+linkedlist_node_s<T>* LinkedList<T>::addNodeToBeginning() {
+
+    linkedlist_node_s<T>* node = new linkedlist_node_s<T>;
+
+    node->next = firstNode;
+
+    if (firstNode == nullptr) {
+        // empty linked list
+        // the first node is the last one
+        lastNode = node;
+    }
+
+    firstNode = node;
+
+    return node;
+
+}
+
+template <class T>
+linkedlist_node_s<T>* LinkedList<T>::addNodeToEnd() {
+
+    linkedlist_node_s<T>* node = new linkedlist_node_s<T>;
+
+    node->next = nullptr;
+
+    if (lastNode == nullptr) {
+        // empty linked list
+        // the first node is the last one
+        firstNode = node;
+    }
+    else {
+        // there is already at least one element
+        lastNode->next = node;
+    }
+
+    lastNode = node;
+
+    return node;
+
+}
+
+template <class T>
+linkedlist_node_s<T>* LinkedList<T>::addNodeAfter(linkedlist_node_s<T> *afterNode) {
+
+    linkedlist_node_s<T>* node = new linkedlist_node_s<T>;
+
+    if (afterNode->next == nullptr) {
+        // we are adding to the end of the linked list
+        // node->next should be NULL
+        lastNode = node;
+    }
+
+    node->next = afterNode->next;
+
+    afterNode->next = node;
+
+    return node;
+
+}
+
+template <class T>
+void LinkedList<T>::deleteFirstNode() {
+
+    if (firstNode == lastNode) {
+        // we are deleting the last and only node
+
+        delete firstNode;
+
+        firstNode = lastNode = nullptr;
+
+        return;
+
+    }
+
+    const linkedlist_node_s<T>* oldFirstNode = firstNode;
+    firstNode = firstNode->next;
+
+    delete oldFirstNode;
+
+}
+
 /////////////////////////////////////////
 
-class OrientedGraph {
+// #define WEIGHT_INFINITY std::numeric_limits<weight_t>::max()
+#define WEIGHT_INFINITY 1000000
+typedef unsigned int weight_t;
+
+// classes
+
+class Graph {
 
 public:
     const size_t nodes;
 
 protected:
-    explicit OrientedGraph(const size_t nodes): nodes(nodes) {}
+    explicit Graph(const size_t nodes): nodes(nodes) {}
 
 public:
-    virtual ~OrientedGraph() = default;
+    virtual ~Graph() = default;
 
     virtual void createPath(size_t i, size_t j, weight_t weight) = 0;
 
     virtual void debugPrint() = 0;
 
     static void printWeight(weight_t weight) {
+
         if (weight == WEIGHT_INFINITY) {
             std::cout << "INF";
         }
@@ -51,13 +166,13 @@ public:
 
 };
 
-class MatrixOrientedGraph : public OrientedGraph {
+class MatrixOrientedGraph : public Graph {
 
 private:
     weight_t** matrix;
 
 public:
-    explicit MatrixOrientedGraph(const size_t nodes): OrientedGraph(nodes) {
+    explicit MatrixOrientedGraph(const size_t nodes): Graph(nodes) {
 
         matrix = new weight_t*[nodes];
 
@@ -92,9 +207,9 @@ public:
 
     weight_t* sumUpToFindEs();
 
-    size_t findRadius(const weight_t* e);
+    /*size_t findRadius(const weight_t* e);
 
-    size_t findDiameter(const weight_t* e);
+    size_t findDiameter(const weight_t* e);*/
 
 };
 
@@ -215,7 +330,7 @@ weight_t* MatrixOrientedGraph::sumUpToFindEs() {
 
 }
 
-size_t MatrixOrientedGraph::findRadius(const weight_t* e) {
+/*size_t MatrixOrientedGraph::findRadius(const weight_t* e) {
 
     size_t radiusIndex = 0;
 
@@ -241,21 +356,21 @@ size_t MatrixOrientedGraph::findDiameter(const weight_t* e) {
 
     return diameterIndex;
 
-}
+}*/
 
 //////////////////////////////
 
-class TriangleMatrixOrientedGraph : public OrientedGraph {
+class TriangleMatrixOrientedGraph : public Graph {
 
 private:
     weight_t** matrix;
 
 public:
-    explicit TriangleMatrixOrientedGraph(const size_t nodes): OrientedGraph(nodes) {
+    explicit TriangleMatrixOrientedGraph(const size_t nodes): Graph(nodes) {
 
         matrix = new weight_t*[nodes];
 
-        matrix[0] = nullptr;
+        matrix[0] = nullptr; // just in case, we will never access this element
 
         for (size_t i = 1; i < nodes; i++) {
             matrix[i] = new weight_t[i];
@@ -435,29 +550,36 @@ weight_t* TriangleMatrixOrientedGraph::sumUpToFindEs() {
 
 //////////////////////////////
 
-/*typedef struct {
+struct listorgraphel_s {
     size_t index;
     weight_t weight;
-} listorgraphel_t;*/
+};
 
-class ListOrientedGraph : public OrientedGraph {
+class ListOrientedGraph : public Graph {
 
 private:
-    std::vector<std::pair<size_t, weight_t>>* list;
+    LinkedList<listorgraphel_s>* list;
 
 public:
-    explicit ListOrientedGraph(const size_t nodes): OrientedGraph(nodes) {
+    explicit ListOrientedGraph(const size_t nodes): Graph(nodes) {
 
-        list = new std::vector<std::pair<size_t, weight_t>>[nodes];
+        list = new LinkedList<listorgraphel_s>[nodes];
 
     }
 
     ~ListOrientedGraph() override {
+
         delete[] list;
+
     }
 
     void createPath(const size_t i, const size_t j, const weight_t weight) override {
-        list[i].emplace_back(j, weight);
+
+        listorgraphel_s* element = &list[i].addNodeToEnd()->payload;
+
+        element->index = j;
+        element->weight = weight;
+
     }
 
     void debugPrint() override;
@@ -495,7 +617,19 @@ public:
 
             used[v] = true;
 
-            for (std::pair<size_t, weight_t> e : list[v]) {
+            auto node = list[v].firstNode;
+
+            while (node != nullptr) {
+
+                if (d[v] + node->payload.weight < d[node->payload.index]) {
+                    d[node->payload.index] = d[v] + node->payload.weight;
+                }
+
+                node = node->next;
+
+            }
+
+            /*for (std::pair<size_t, weight_t> e : list[v]) {
                 // e.first - node id
                 // e.second - weight
 
@@ -503,7 +637,7 @@ public:
                     d[e.first] = d[v] + e.second;
                 }
 
-            }
+            }*/
 
         }
 
@@ -525,10 +659,22 @@ void ListOrientedGraph::debugPrint() {
 
     for (size_t i = 0; i < nodes; i++) {
         printf("%2u: ", (unsigned int)i + 1);
-        for (std::pair<size_t, weight_t> p : list[i]) {
+
+        auto node = list[i].firstNode;
+
+        while (node != nullptr) {
+
+            std::cout << '(' << node->payload.index + 1 << ", " << node->payload.weight << ") ";
+
+            node = node->next;
+
+        }
+
+        /*for (std::pair<size_t, weight_t> p : list[i]) {
             // first is node id, second is weight
             std::cout << '(' << p.first + 1 << ", " << p.second << ") ";
-        }
+        }*/
+
         std::cout << std::endl;
     }
 
@@ -571,7 +717,7 @@ int main() {
         }
     }
 
-    OrientedGraph* graph;
+    Graph* graph;
 
     if (impl == IMPL_MATRIX) {
         graph = new MatrixOrientedGraph(citiesCount);
@@ -630,12 +776,12 @@ int main() {
 
         std::cout << "Graph mediane node: " << minRowIndex + 1 << std::endl;
         std::cout << "Graph mediane: ";
-        OrientedGraph::printWeight(e[minRowIndex]);
+        Graph::printWeight(e[minRowIndex]);
         std::cout << std::endl;
 
         /*for (size_t i = 0; i < graph->nodes; i++) {
             std::cout << "e(" << i + 1 << ") = ";
-            OrientedGraph::printWeight(e[i]);
+            Graph::printWeight(e[i]);
             std::cout << std::endl;
         }
 
@@ -643,11 +789,11 @@ int main() {
         size_t radiusIndex = ((MatrixOrientedGraph*)graph)->findRadius(e);
 
         std::cout << "Graph diameter: ";
-        OrientedGraph::printWeight(e[diameterIndex]);
+        Graph::printWeight(e[diameterIndex]);
         std::cout << std::endl;
 
         std::cout << "Graph radius: ";
-        OrientedGraph::printWeight(e[radiusIndex]);
+        Graph::printWeight(e[radiusIndex]);
         std::cout << std::endl;
 
         std::cout << "Center of graph: " << radiusIndex + 1 << std::endl;
