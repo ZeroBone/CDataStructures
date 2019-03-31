@@ -169,18 +169,17 @@ public:
 class MatrixOrientedGraph : public Graph {
 
 private:
-    weight_t** matrix;
+    weight_t* matrix;
 
 public:
     explicit MatrixOrientedGraph(const size_t nodes): Graph(nodes) {
 
-        matrix = new weight_t*[nodes];
+        matrix = new weight_t[nodes * nodes];
 
         for (size_t i = 0; i < nodes; i++) {
-            matrix[i] = new weight_t[nodes];
 
             for (size_t j = 0; j < nodes; j++) {
-                matrix[i][j] = i == j ? 0 : WEIGHT_INFINITY;
+                matrix[i * nodes + j] = i == j ? 0 : WEIGHT_INFINITY;
             }
 
         }
@@ -189,16 +188,12 @@ public:
 
     ~MatrixOrientedGraph() override {
 
-        for (size_t i = 0; i < nodes; i++) {
-            delete[] matrix[i];
-        }
-
         delete[] matrix;
 
     }
 
     void createPath(const size_t i, const size_t j, const weight_t weight) override {
-        matrix[i][j] = weight;
+        matrix[i * nodes + j] = weight;
     }
 
     void debugPrint() override;
@@ -239,11 +234,11 @@ void MatrixOrientedGraph::debugPrint() {
 
         for (size_t j = 0; j < nodes; j++) {
 
-            if (matrix[i][j] == WEIGHT_INFINITY) {
+            if (matrix[i * nodes + j] == WEIGHT_INFINITY) {
                 std::cout << "INF  ";
             }
             else {
-                printf("%2d   ", matrix[i][j]);
+                printf("%2d   ", matrix[i * nodes + j]);
             }
 
             if (j != nodes - 1) {
@@ -276,8 +271,13 @@ void MatrixOrientedGraph::findShortestRoutes() {
     for (size_t k = 0; k < nodes; k++) {
         for (size_t i = 0; i < nodes; i++) {
             for (size_t j = 0; j < nodes; j++) {
+                /*
                 if (matrix[i][k] + matrix[k][j] < matrix[i][j]) {
                     matrix[i][j] = matrix[i][k] + matrix[k][j];
+                }
+                 */
+                if (matrix[i * nodes + k] + matrix[k * nodes + j] < matrix[i * nodes + j]) {
+                    matrix[i * nodes + j] = matrix[i * nodes + k] + matrix[k * nodes + j];
                 }
             }
         }
@@ -302,12 +302,13 @@ weight_t* MatrixOrientedGraph::sumUpToFindEs() {
     weight_t* rowSums = new weight_t[nodes];
 
     for (size_t y = 0; y < nodes; y++) {
-        rowSums[y] = matrix[y][0];
+        // rowSums[y] = matrix[y][0];
+        rowSums[y] = matrix[y * nodes];
     }
 
     for (size_t y = 0; y < nodes; y++) {
         for (size_t x = 1; x < nodes; x++) {
-            rowSums[y] += matrix[y][x];
+            rowSums[y] += matrix[y * nodes + x];
         }
     }
 
