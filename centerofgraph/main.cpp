@@ -502,11 +502,22 @@ void TriangleMatrixOrientedGraph::findShortestRoutes() {
                     matrix[i][j] = matrix[i][k] + matrix[k][j];
                 }*/
 
-                // std::cout << "I: " << i << " J: " << j << " K: " << k << std::endl;
+                /*if (k == j) {
+                    std::cout << "I: " << i << " J: " << j << " K: " << k << std::endl;
+                }*/
 
-                weight_t a = k > i ? matrix[k][i] : matrix[i][k];
-                weight_t b = k > j ? matrix[k][j] : j == 0 ? 0 : matrix[j][k];
-                // weight_t* current = j > i ? &matrix[j][i] : &matrix[i][j];
+                // weight_t a = k > i ? matrix[k][i] : matrix[i][k];
+                // weight_t b = k > j ? matrix[k][j] : j == 0 ? 0 : matrix[j][k];
+
+                weight_t a = k > i ?
+                    matrix[k][i] :
+                    (k == i ? 0 : matrix[i][k]);
+
+                weight_t b = k > j ?
+                    matrix[k][j] :
+                    (k == j ? 0 : matrix[j][k]);
+
+                // std::cout << a << ' ' << b << std::endl;
 
                 if (a + b < matrix[i][j]) {
                     matrix[i][j] = a + b;
