@@ -3,6 +3,8 @@
 
 #include <iostream>
 
+typedef unsigned char height_t;
+
 template <class T>
 class TracingAvlTree;
 
@@ -22,7 +24,7 @@ class TracingAvlTreeNode {
     TracingAvlTreeNode* left;
     TracingAvlTreeNode* right;
     
-    int mHeight;
+    height_t mHeight;
 
     static void print(TracingAvlTreeNode* node, int &indent);
 
@@ -46,9 +48,9 @@ class TracingAvlTreeNode {
 
     static TracingAvlTreeNode<T>* remove(T x, TracingAvlTreeNode<T>* node);
 
-    static int height(TracingAvlTreeNode<T>* node);
+    static height_t height(TracingAvlTreeNode<T>* node);
 
-    static int getBalance(TracingAvlTreeNode<T>* node);
+    static height_t getBalance(TracingAvlTreeNode<T>* node);
     
 };
 
@@ -94,6 +96,10 @@ class TracingAvlTree {
 
         return nodesCount * sizeof(TracingAvlTreeNode<T>);
 
+    }
+
+    size_t getNodeSize() const {
+        return sizeof(TracingAvlTreeNode<T>);
     }
 
 };
@@ -365,14 +371,14 @@ TracingAvlTreeNode<T>* TracingAvlTreeNode<T>::remove(T x, TracingAvlTreeNode<T>*
 }
 
 template <class T>
-int TracingAvlTreeNode<T>::height(TracingAvlTreeNode<T>* node) {
+height_t TracingAvlTreeNode<T>::height(TracingAvlTreeNode<T>* node) {
 
     return (node == nullptr ? -1 : node->mHeight);
 
 }
 
 template <class T>
-int TracingAvlTreeNode<T>::getBalance(TracingAvlTreeNode<T>* node) {
+height_t TracingAvlTreeNode<T>::getBalance(TracingAvlTreeNode<T>* node) {
 
     if (node == nullptr) {
         return 0;

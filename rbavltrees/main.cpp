@@ -7,26 +7,35 @@ int main() {
 
     std::cout << "Loading data structures..." << std::endl;
 
-    auto avlTree = new TracingAvlTree<unsigned long>();
-    auto rbTree = new TracingRBTree<unsigned long>();
+    auto avlTree = new TracingAvlTree<long>();
+    auto rbTree = new TracingRbTree<long>();
 
     std::cout << "Loading data into data structures..." << std::endl;
 
-    std::fstream file("f4.txt");
+    std::fstream file("test.txt");
 
-    unsigned long d;
+    int searchIndex = 0;
+    long toSearch[100];
+
+    long d;
     while (file >> d) {
 
+        cout << "Inserting " << d << endl;
+
         avlTree->insert(d);
-        rbTree->insert(d, &d);
+        rbTree->insert(d);
+
+        if (searchIndex < 100) {
+            toSearch[searchIndex++] = d;
+        }
 
     }
 
     // avlTree->print();
 
     std::cout << "Data loaded." << std::endl;
-    std::cout << "RB Memory usage: Nodes: " << rbTree->nodesCount << " Bytes: " << rbTree->getMemoryUsage() << std::endl;
-    std::cout << "AVL Memory usage: Nodes: " << avlTree->nodesCount << " Bytes: " << avlTree->getMemoryUsage() << std::endl;
+    std::cout << "RB node size: " << rbTree->getNodeSize() << std::endl;
+    std::cout << "AVL node size: " << avlTree->getNodeSize() << std::endl;
 
     /*avlTree->remove(3);
     avlTree->print();
@@ -37,8 +46,8 @@ int main() {
     unsigned long rbCompares = 0;
 
     for (unsigned long i = 0; i < 100; i++) {
-
-        unsigned long key = i + 1;
+        // 3 несуществующих, минимальное, максимальное и 3 произвольных
+        long key = toSearch[i];
 
         // avl
         unsigned long currentAvlCompares = 0;
@@ -50,7 +59,7 @@ int main() {
         // rb
         unsigned long currentRbCompares = 0;
 
-        rbTree->lookup(key, currentRbCompares);
+        rbTree->search(key);
 
         std::cout << "Key: " << key << " AVL Compares: " << currentAvlCompares << " RB compares: " << currentRbCompares << std::endl;
 

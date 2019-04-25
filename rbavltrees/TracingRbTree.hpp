@@ -1,527 +1,487 @@
 #ifndef RBAVLTREES_RBTREE_HPP
 #define RBAVLTREES_RBTREE_HPP
 
-#include <assert.h>
-#include <string>
+using namespace std;
 
-#ifdef DEBUG
-#include "debug.h"
-#endif
+template <class T>
+class TracingRbTree;
 
-template<typename T>
-class TracingRBTree {
+template <class T>
+class TracingRbTreeNode {
+
+    friend class TracingRbTree<T>;
 
     public:
 
-    int nodesCount = 0;
+    T key;
 
-    size_t getMemoryUsage() const {
-
-        return nodesCount * sizeof(TracingRBTreeNode);
-
-    }
+    TracingRbTreeNode* parent;
 
     private:
 
-    class TracingRBTreeNode {
+    char color;
 
-        public:
-        enum Color {
-            RED = 0,
-            BLACK = 1,
-        };
-        enum Side {
-            LEFT = 0,
-            RIGHT = 1,
-        };
+    TracingRbTreeNode* left;
+    TracingRbTreeNode* right;
 
-        TracingRBTreeNode(long long k, T* o, TracingRBTree* t) :
-            obj(o), key(k), color(RED), parent(NULL), tree(t) {
-            this->link[LEFT] = TracingRBTree<T>::nil;
-            this->link[RIGHT] = TracingRBTree<T>::nil;
 
-            if (NULL == o) {
-                this->color = BLACK;
-                this->link[LEFT] = NULL;
-                this->link[RIGHT] = NULL;
-            }
+};
 
-            // count
-            // t->nodesCount++;
+template <class T>
+class TracingRbTree {
 
-        }
+    TracingRbTreeNode<T>* root;
 
-        ~TracingRBTreeNode() {
-
-            // tree->nodes--;
-
-            if (this->link[LEFT]->isNil() == false)
-                delete this->link[LEFT];
-            if (this->link[RIGHT]->isNil() == false)
-                delete this->link[RIGHT];
-        }
-
-        inline bool isNil() { return (this->obj == NULL); }
-
-        inline void swapColor(TracingRBTreeNode& node) {
-            Color c = this->color;
-            this->color = node.color;
-            node.color = c;
-        }
-
-        inline T* getObj() { return this->obj; }
-
-        inline void setBlack() { this->color = BLACK; }
-
-        inline void setRed() { this->color = RED; }
-
-        inline Color getColor() { return this->color; }
-
-        inline bool isBlack() { return (this->color == BLACK); }
-
-        inline bool isRed() { return (this->color == RED); }
-
-        inline Side whichSide(TracingRBTreeNode& node) {
-            if (this->link[LEFT] == &node)
-                return LEFT;
-            else if (this->link[RIGHT] == &node)
-                return RIGHT;
-            else
-                assert (0);
-        }
-
-        inline Side otherSide(Side s) {
-            assert (s == LEFT || s == RIGHT);
-            return (s == LEFT ? RIGHT : LEFT);
-        }
-
-        inline TracingRBTreeNode* getBrother() {
-            if (this->parent == NULL)
-                return NULL;
-
-            assert (this->parent->link[LEFT] == this ||
-                    this->parent->link[RIGHT] == this);
-            return (this->parent->link[LEFT] == this ?
-                    this->parent->link[RIGHT] : this->parent->link[LEFT]);
-        }
-
-        inline void attach(TracingRBTreeNode& node) {
-            assert (this->key != node.key);
-            Side s = (node.key < this->key ? LEFT : RIGHT);
-            this->attach(s, node);
-        }
-
-        inline void attach(Side s, TracingRBTreeNode& node) {
-            assert (s == LEFT || s == RIGHT);
-            assert (this != &node);
-            assert (this->link[s]->isNil());
-            this->link[s] = &node;
-            if (!node.isNil())
-                node.parent = this;
-        }
-
-        inline TracingRBTreeNode* detach(Side s) {
-            assert (s == LEFT || s == RIGHT);
-
-            if (this->isNil() || this->link[s]->isNil())
-                return TracingRBTree<T>::nil;
-
-            TracingRBTreeNode* node = this->link[s];
-            this->link[s]->parent = NULL;
-            this->link[s] = TracingRBTree<T>::nil;
-            return node;
-        }
-
-        inline TracingRBTreeNode* detach(TracingRBTreeNode& node) {
-            if (this->link[RIGHT] == &node)
-                return this->detach(RIGHT);
-            else if (this->link[LEFT] == &node)
-                return this->detach(LEFT);
-            else
-                assert (0);
-
-            return NULL;
-        }
-
-        inline TracingRBTreeNode* searchMax() {
-            if (!this->link[RIGHT]->isNil())
-                return this->link[RIGHT]->searchMax();
-            else
-                return this;
-        }
-
-        inline TracingRBTreeNode* searchMin() {
-            if (!this->link[LEFT]->isNil())
-                return this->link[LEFT]->searchMax();
-            else
-                return this;
-        }
-
-        void rotate(Side s) {
-            TracingRBTreeNode* nLeaf;   // New leaf
-            TracingRBTreeNode* nParent; // New parent
-            TracingRBTreeNode* nGrand;  // New grand father
-            Side r = otherSide(s);
-
-            nGrand = this->parent;
-            nParent = this->detach(r);
-            assert (nParent);
-
-            nLeaf = nParent->detach(s);
-
-            if (nGrand) {
-                Side ps = nGrand->whichSide(*this);
-                nGrand->detach(ps);
-                nGrand->attach(ps, *nParent);
-            }
-            else {
-                this->tree->root = nParent;
-            }
-
-            nParent->attach(s, *this);
-
-            if (!nLeaf->isNil())
-                this->attach(r, *nLeaf);
-        }
-
-        void adjustInsert() {
-            if (this->parent == NULL) {
-                // this node is root
-                this->setBlack();
-                return;
-            }
-            else {
-                if (this->parent->isRed()) {
-                    assert (this->parent->parent);
-                    assert (this->parent->parent->isBlack());
-                    TracingRBTreeNode* cParent = this->parent;
-                    TracingRBTreeNode* grand = this->parent->parent;
-                    TracingRBTreeNode* uncle = this->parent->getBrother();
-                    Side s;
-
-                    if (uncle->isRed()) {
-                        uncle->setBlack();
-                        this->parent->setBlack();
-                        grand->setRed();
-                        grand->adjustInsert();
-                    }
-                    else {
-                        if (this->parent->whichSide(*this) !=
-                            grand->whichSide(*this->parent)) {
-                            s = otherSide(cParent->whichSide(*this));
-                            cParent->rotate(s);
-                            cParent = this;
-                        }
-
-                        s = otherSide(grand->whichSide(*cParent));
-                        grand->rotate(s);
-
-                        assert (grand->isBlack() && cParent->isRed());
-                        grand->swapColor(*cParent);
-                    }
-                }
-            }
-        }
-
-        bool insert(TracingRBTreeNode& node) {
-            if (this->key == node.key) {
-                // duplicated
-                return false;
-            }
-            else {
-                Side s = (node.key < this->key ? LEFT : RIGHT);
-                if (!this->link[s]->isNil())
-                    return this->link[s]->insert(node);
-                else
-                    this->attach(s, node);
-            }
-
-            node.adjustInsert();
-            return true;
-        }
-
-        TracingRBTreeNode* lookup(long long k, unsigned long& compares) {
-            if (compares++, this->key == k) {
-                return this;
-            }
-            else {
-                Side s = (compares++, k < this->key ? LEFT : RIGHT);
-                return (compares++, this->link[s]->isNil() ? NULL : this->link[s]->lookup(k, compares));
-            }
-        }
-
-        void leave() {
-            // only detach from tree, balancing color & tree in adjustLeave ()
-            TracingRBTreeNode* cParent = this->parent;
-
-            if (this->link[LEFT]->isNil() && this->link[RIGHT]->isNil()) {
-                if (cParent) {
-                    Side s = cParent->whichSide(*this);
-                    cParent->detach(*this);
-
-                    if (this->isBlack()) {
-                        cParent->link[s]->adjustLeave(cParent);
-                    }
-                }
-                else {
-                    this->tree->root = NULL;
-                }
-            }
-            else if ((this->link[LEFT]->isNil()) ^
-                     (this->link[RIGHT]->isNil())) {
-                Side s = (this->link[LEFT]->isNil() ? RIGHT : LEFT);
-                TracingRBTreeNode* cTarget = this->detach(s);
-
-                if (cParent) {
-                    cParent->detach(*this);
-                    cParent->attach(*cTarget);
-                }
-                else
-                    this->tree->root = cTarget;
-
-                if (this->isBlack())
-                    cTarget->adjustLeave(cParent);
-            }
-            else {
-                // swap target node & maximum node in left subtree
-                assert (!this->link[LEFT]->isNil() &&
-                        !this->link[RIGHT]->isNil());
-
-                TracingRBTreeNode* cMax = this->link[LEFT]->searchMax();
-                TracingRBTreeNode* mParent = cMax->parent;
-                TracingRBTreeNode* cLeft = this->detach(LEFT);
-                TracingRBTreeNode* cRight = this->detach(RIGHT);
-                TracingRBTreeNode* mLeft = cMax->detach(LEFT);
-
-                this->attach(*mLeft);
-                if (cParent) {
-                    cParent->detach(*this);
-                }
-                else {
-                    this->tree->root = NULL;
-                }
-
-                if (cMax != cLeft) {
-                    // cMax have more 1 hop from THIS
-                    mParent->detach(*cMax);
-                    mParent->attach(*this);
-                    cMax->attach(LEFT, *cLeft);
-                    cMax->attach(RIGHT, *cRight);
-                }
-                else {
-                    // cMax == cLeft (cMax is left node of THIS)
-                    assert (cMax->link[RIGHT]->isNil());
-                    cMax->attach(RIGHT, *cRight);
-                    cMax->attach(LEFT, *this);
-                }
-
-                if (cParent) {
-                    cParent->attach(*cMax);
-                }
-                else {
-                    this->tree->root = cMax;
-                }
-
-                this->swapColor(*cMax);
-                this->leave();
-            }
-        }
-
-        void adjustLeave(TracingRBTreeNode* cParent) {
-            // nothing to do when node is root
-            if (NULL == cParent) {
-                this->setBlack();
-                return;
-            }
-            if (this->isRed()) {
-                this->setBlack();
-                return;
-            }
-
-            TracingRBTreeNode* cNeighbor =
-                cParent->link[otherSide(cParent->whichSide(*this))];
-
-            assert (cNeighbor);
-            // cParent->tree->dumpTree ("Adjusting by Leave");
-
-            if (cNeighbor->isRed()) {
-                Side s = cParent->whichSide(*this);
-                assert (cParent->isBlack());
-                cParent->swapColor(*cNeighbor);
-                cParent->rotate(s);
-                cNeighbor = cParent->link[otherSide(s)];
-            }
-            else if (cParent->isBlack() &&
-                     cNeighbor->link[LEFT]->isBlack() &&
-                     cNeighbor->link[RIGHT]->isBlack()) {
-                assert (cNeighbor->isBlack());
-                cNeighbor->setRed();
-                return cParent->adjustLeave(cParent->parent);
-            }
-
-            if (cParent->isRed() &&
-                cNeighbor->link[LEFT]->isBlack() &&
-                cNeighbor->link[RIGHT]->isBlack()) {
-                assert (cNeighbor->isBlack());
-                cParent->swapColor(*cNeighbor);
-            }
-            else {
-                Side ns = cParent->whichSide(*cNeighbor); // Neighbor side
-                Side os = otherSide(ns); // Other side
-
-                if (cNeighbor->link[os]->isRed() &&
-                    cNeighbor->link[ns]->isBlack()) {
-                    cNeighbor->swapColor(*cNeighbor->link[os]);
-                    cNeighbor->rotate(ns);
-                    cNeighbor = cParent->link[ns];
-                }
-
-                if (cNeighbor->link[ns]->isRed()) {
-                    cNeighbor->link[ns]->setBlack();
-                    cParent->swapColor(*cNeighbor);
-                    cParent->rotate(os);
-                }
-            }
-        }
-
-#ifdef DEBUG
-        int checkBalance () {
-      if (this->isNil ())
-    return 1;
-
-      if (this->isRed () &&
-      (this->link[LEFT]->isRed () || this->link[RIGHT]->isRed ()))
-    {
-      debug (DEBUG, "Detected double RED, around key=%lld", this->key);
-      assert (0);
-    }
-
-      int lCount = this->link[LEFT]->checkBalance ();
-      int rCount = this->link[RIGHT]->checkBalance ();
-      if (lCount != rCount)
-    {
-      debug (DEBUG, "Detected broken balance, around key=%lld", this->key);
-      assert (0);
-    }
-
-      return (this->isBlack () ? rCount + 1 : rCount);
-    }
-
-    void printNode (int depth) {
-      char space[] = "     ";
-      char header[0x1000] = "";
-      if (this->link[RIGHT])
-    this->link[RIGHT]->printNode (depth + 1);
-
-      for (int i = 0; i < depth ; i++)
-    strncat (header, space, sizeof (header) - 1);
-
-      debug (DEBUG, "%s[%s:%lld %p]\n", header,
-         (this->color == RED ? "R" : "B"), this->key, this->obj);
-
-      if (this->link[LEFT])
-    this->link[LEFT]->printNode (depth + 1);
-    }
-#endif
-
-        private:
-        T* obj;
-
-        long long key;
-
-        Color color;
-
-        TracingRBTreeNode* parent, * link[2];
-
-        TracingRBTree* tree;
-    } * root;
-
-    static TracingRBTreeNode* nil;
-
-    static bool DEBUG;
-
-#ifdef DEBUG
-    void dumpTree (std::string title) {
-    debug (DEBUG, "======= %s ==============================================",
-       title.c_str ());
-
-    if (this->root)
-      this->root->printNode (0);
-    else
-      debug (true, " !! No tree");
-  }
-#endif
+    TracingRbTreeNode<T>* q;
 
     public:
-    TracingRBTree() : root(NULL) {}
 
-    ~TracingRBTree() {
-        delete this->root;
+    TracingRbTree() {
+        q = nullptr;
+        root = nullptr;
     }
 
-    bool insert(long long key, T* p) {
-        TracingRBTreeNode* node = new TracingRBTreeNode(key, p, this);
+    size_t getNodeSize() const {
+        return sizeof(TracingRbTreeNode<T>);
+    }
 
-        nodesCount++;
+    void insert(T key);
 
-        assert (key >= 0);
+    bool remove(T key);
 
-#ifdef DEBUG
-        this->dumpTree ("Before insertion");
-#endif
+    TracingRbTreeNode<T>* search(T key);
 
-        if (this->root) {
-            if (!this->root->insert(*node)) {
-                delete node;
-                return false;
+    void disp();
+
+    private:
+
+    void insertfix(TracingRbTreeNode<T>*);
+
+    void leftrotate(TracingRbTreeNode<T>*);
+
+    void rightrotate(TracingRbTreeNode<T>*);
+
+    TracingRbTreeNode<T>* successor(TracingRbTreeNode<T>*);
+
+    void delfix(TracingRbTreeNode<T>*);
+
+    void display(TracingRbTreeNode<T>*);
+
+};
+
+template <class T>
+void TracingRbTree<T>::insert(T key) {
+
+    TracingRbTreeNode<T>* p, *q;
+
+    auto t = new TracingRbTreeNode<T>();
+
+    t->key = key;
+
+    t->left = nullptr;
+    t->right = nullptr;
+    t->color = 'r';
+
+    p = root;
+    q = nullptr;
+
+    if (root == nullptr) {
+        root = t;
+        t->parent = nullptr;
+    }
+    else {
+
+        while (p != nullptr) {
+
+            q = p;
+
+            if (p->key < t->key)
+                p = p->right;
+            else
+                p = p->left;
+        }
+
+        t->parent = q;
+
+        if (q->key < t->key)
+            q->right = t;
+        else
+            q->left = t;
+
+    }
+
+    insertfix(t);
+
+}
+
+template <class T>
+void TracingRbTree<T>::insertfix(TracingRbTreeNode<T>* t) {
+
+    TracingRbTreeNode<T>* u;
+
+    if (root == t) {
+        t->color = 'b';
+        return;
+    }
+
+    while (t->parent != nullptr && t->parent->color == 'r') {
+
+        TracingRbTreeNode<T>* g = t->parent->parent;
+
+        if (g->left == t->parent) {
+
+            if (g->right != nullptr) {
+
+                u = g->right;
+
+                if (u->color == 'r') {
+                    t->parent->color = 'b';
+                    u->color = 'b';
+                    g->color = 'r';
+                    t = g;
+                }
+
+            }
+            else {
+
+                if (t->parent->right == t) {
+
+                    t = t->parent;
+                    leftrotate(t);
+
+                }
+
+                t->parent->color = 'b';
+                g->color = 'r';
+
+                rightrotate(g);
+
+            }
+
+        }
+        else {
+
+            if (g->left != nullptr) {
+
+                u = g->left;
+                if (u->color == 'r') {
+                    t->parent->color = 'b';
+                    u->color = 'b';
+                    g->color = 'r';
+                    t = g;
+                }
+            }
+            else {
+
+                if (t->parent->left == t) {
+                    t = t->parent;
+                    rightrotate(t);
+                }
+
+                t->parent->color = 'b';
+                g->color = 'r';
+
+                leftrotate(g);
+
+            }
+
+        }
+
+        root->color = 'b';
+
+    }
+
+}
+
+template <class T>
+bool TracingRbTree<T>::remove(T key) {
+
+    if (root == nullptr) {
+        // empty tree
+        return false;
+    }
+
+    TracingRbTreeNode<T>* p;
+
+    p = root;
+
+    TracingRbTreeNode<T>* y = nullptr;
+    TracingRbTreeNode<T>* q = nullptr;
+
+    while (p != nullptr) {
+
+        if (p->key == key) {
+
+            // delete p
+
+            if (p->left == nullptr || p->right == nullptr) {
+                y = p;
+            }
+            else {
+                y = successor(p);
+            }
+
+            if (y->left != nullptr) {
+                q = y->left;
+            }
+            else {
+                if (y->right != nullptr) {
+                    q = y->right;
+                }
+                else {
+                    q = nullptr;
+                }
+            }
+
+            if (q != nullptr) {
+                q->parent = y->parent;
+            }
+
+            if (y->parent == nullptr) {
+                root = q;
+            }
+            else {
+                if (y == y->parent->left) {
+                    y->parent->left = q;
+                }
+                else {
+                    y->parent->right = q;
+                }
+            }
+
+            if (y != p) {
+                p->color = y->color;
+                p->key = y->key;
+            }
+
+            if (y->color == 'b') {
+                delfix(q);
+            }
+
+            return true;
+
+        }
+
+        if (p->key < key) {
+            p = p->right;
+        }
+        else {
+            p = p->left;
+        }
+
+    }
+
+    return false;
+
+}
+
+template <class T>
+void TracingRbTree<T>::delfix(TracingRbTreeNode<T>* p) {
+
+    TracingRbTreeNode<T>* s;
+
+    while (p != root && p->color == 'b') {
+        if (p->parent->left == p) {
+            s = p->parent->right;
+            if (s->color == 'r') {
+                s->color = 'b';
+                p->parent->color = 'r';
+                leftrotate(p->parent);
+                s = p->parent->right;
+            }
+            if (s->right->color == 'b' && s->left->color == 'b') {
+                s->color = 'r';
+                p = p->parent;
+            }
+            else {
+                if (s->right->color == 'b') {
+                    s->left->color == 'b';
+                    s->color = 'r';
+                    rightrotate(s);
+                    s = p->parent->right;
+                }
+                s->color = p->parent->color;
+                p->parent->color = 'b';
+                s->right->color = 'b';
+                leftrotate(p->parent);
+                p = root;
             }
         }
         else {
-            this->root = node;
-            node->setBlack();
+            s = p->parent->left;
+            if (s->color == 'r') {
+                s->color = 'b';
+                p->parent->color = 'r';
+                rightrotate(p->parent);
+                s = p->parent->left;
+            }
+            if (s->left->color == 'b' && s->right->color == 'b') {
+                s->color = 'r';
+                p = p->parent;
+            }
+            else {
+                if (s->left->color == 'b') {
+                    s->right->color = 'b';
+                    s->color = 'r';
+                    leftrotate(s);
+                    s = p->parent->left;
+                }
+                s->color = p->parent->color;
+                p->parent->color = 'b';
+                s->left->color = 'b';
+                rightrotate(p->parent);
+                p = root;
+            }
+        }
+        p->color = 'b';
+        root->color = 'b';
+    }
+}
+
+template <class T>
+void TracingRbTree<T>::leftrotate(TracingRbTreeNode<T>* p) {
+    if (p->right == nullptr)
+        return;
+    else {
+        TracingRbTreeNode<T>* y = p->right;
+        if (y->left != nullptr) {
+            p->right = y->left;
+            y->left->parent = p;
+        }
+        else
+            p->right = nullptr;
+        if (p->parent != nullptr)
+            y->parent = p->parent;
+        if (p->parent == nullptr)
+            root = y;
+        else {
+            if (p == p->parent->left)
+                p->parent->left = y;
+            else
+                p->parent->right = y;
+        }
+        y->left = p;
+        p->parent = y;
+    }
+}
+
+template <class T>
+void TracingRbTree<T>::rightrotate(TracingRbTreeNode<T>* p) {
+    if (p->left == nullptr)
+        return;
+    else {
+        TracingRbTreeNode<T>* y = p->left;
+        if (y->right != nullptr) {
+            p->left = y->right;
+            y->right->parent = p;
+        }
+        else
+            p->left = nullptr;
+        if (p->parent != nullptr)
+            y->parent = p->parent;
+        if (p->parent == nullptr)
+            root = y;
+        else {
+            if (p == p->parent->left)
+                p->parent->left = y;
+            else
+                p->parent->right = y;
+        }
+        y->right = p;
+        p->parent = y;
+    }
+}
+
+template <class T>
+TracingRbTreeNode<T>* TracingRbTree<T>::successor(TracingRbTreeNode<T>* p) {
+    TracingRbTreeNode<T>* y = nullptr;
+    if (p->left != nullptr) {
+        y = p->left;
+        while (y->right != nullptr)
+            y = y->right;
+    }
+    else {
+        y = p->right;
+        while (y->left != nullptr)
+            y = y->left;
+    }
+    return y;
+}
+
+template <class T>
+void TracingRbTree<T>::disp() {
+    display(root);
+}
+
+template <class T>
+void TracingRbTree<T>::display(TracingRbTreeNode<T>* p) {
+    if (root == nullptr) {
+        cout << "\nEmpty Tree.";
+        return;
+    }
+    if (p != nullptr) {
+        cout << "\n\t NODE: ";
+        cout << "\n Key: " << p->key;
+        cout << "\n Colour: ";
+        if (p->color == 'b')
+            cout << "Black";
+        else
+            cout << "Red";
+        if (p->parent != nullptr)
+            cout << "\n Parent: " << p->parent->key;
+        else
+            cout << "\n There is no parent of the node.  ";
+        if (p->right != nullptr)
+            cout << "\n Right Child: " << p->right->key;
+        else
+            cout << "\n There is no right child of the node.  ";
+        if (p->left != nullptr)
+            cout << "\n Left Child: " << p->left->key;
+        else
+            cout << "\n There is no left child of the node.  ";
+        cout << endl;
+        if (p->left) {
+            cout << "\n\nLeft:\n";
+            display(p->left);
+        }
+        /*else
+         cout<<"\nNo Left Child.\n";*/
+        if (p->right) {
+            cout << "\n\nRight:\n";
+            display(p->right);
+        }
+        /*else
+         cout<<"\nNo Right Child.\n"*/
+    }
+}
+
+template <class T>
+TracingRbTreeNode<T>* TracingRbTree<T>::search(T key) {
+
+    if (root == nullptr) {
+        // empty tree
+        return nullptr;
+    }
+
+    TracingRbTreeNode<T>* p = root;
+
+    while (p != nullptr) {
+
+        if (p->key == key) {
+            return p;
         }
 
-#ifdef DEBUG
-        this->dumpTree ("After insertion");
-    this->root->checkBalance ();
-#endif
-        return true;
+        if (p->key < key) {
+            p = p->right;
+        }
+        else {
+            p = p->left;
+        }
+
     }
 
-    T* lookup(long long key, unsigned long& compares) {
-        if (NULL == this->root)
-            return NULL;
+    return nullptr;
 
-        TracingRBTreeNode* node = this->root->lookup(key, compares);
-        return (node ? node->getObj() : NULL);
-    }
-
-    bool remove(long long key) {
-        if (NULL == this->root)
-            return false;
-
-        TracingRBTreeNode* node = this->root->lookup(key);
-        if (NULL == node)
-            return false;
-
-#ifdef DEBUG
-        this->dumpTree ("Before removing");
-#endif
-        node->leave();
-        delete node;
-
-#ifdef DEBUG
-        this->dumpTree ("After removing");
-    this->root->checkBalance ();
-#endif
-
-        return true;
-    }
-};
-
-template<typename T>
-class TracingRBTree<T>::TracingRBTreeNode* TracingRBTree<T>::nil = new TracingRBTreeNode(-1, 0, 0);
-
-template<typename T> bool TracingRBTree<T>::DEBUG = true;
+}
 
 #endif //RBAVLTREES_RBTREE_HPP

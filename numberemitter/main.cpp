@@ -1,10 +1,13 @@
 #include <iostream>
 #include <fstream>
 #include <random>
+#include <unordered_map>
 
 int main() {
 
     std::string outputFileName;
+
+    std::unordered_map<int, bool> emittedInts;
 
     std::cout << "Enter output file name:" << std::endl;
     std::cin >> outputFileName;
@@ -22,7 +25,18 @@ int main() {
 
     for (unsigned long i = 0; i < numberCount; i++) {
 
-        file << distribution(generator);
+        int value = distribution(generator);
+
+        while (emittedInts.find(value) != emittedInts.end()) {
+            // unique value
+
+            value = (value + 1) % 99999999;
+
+        }
+
+        emittedInts.insert({value, true});
+
+        file << value;
         file << ' ';
 
     }
