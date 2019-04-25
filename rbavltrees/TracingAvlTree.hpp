@@ -3,12 +3,12 @@
 
 #include <iostream>
 
-typedef unsigned char height_t;
+typedef char height_t;
 
-template <class T>
+template<class T>
 class TracingAvlTree;
 
-template <class T>
+template<class T>
 class TracingAvlTreeNode {
 
     friend class TracingAvlTree<T>;
@@ -20,13 +20,14 @@ class TracingAvlTreeNode {
     private:
 
     explicit TracingAvlTreeNode() = default;
-    
+
     TracingAvlTreeNode* left;
+
     TracingAvlTreeNode* right;
-    
+
     height_t mHeight;
 
-    static void print(TracingAvlTreeNode* node, int &indent);
+    static void print(TracingAvlTreeNode* node, int& indent);
 
     static void destroy(TracingAvlTreeNode<T>* t);
 
@@ -51,10 +52,10 @@ class TracingAvlTreeNode {
     static height_t height(TracingAvlTreeNode<T>* node);
 
     static height_t getBalance(TracingAvlTreeNode<T>* node);
-    
+
 };
 
-template <class T>
+template<class T>
 class TracingAvlTree {
 
     private:
@@ -66,6 +67,7 @@ class TracingAvlTree {
     int nodesCount = 0;
 
     explicit TracingAvlTree() : root(nullptr) {}
+
     explicit TracingAvlTree(TracingAvlTreeNode<T>* root) : root(root) {}
 
     ~TracingAvlTree() {
@@ -106,8 +108,8 @@ class TracingAvlTree {
 
 // implementation
 
-template <class T>
-void TracingAvlTreeNode<T>::print(TracingAvlTreeNode<T>* node, int &indent) {
+template<class T>
+void TracingAvlTreeNode<T>::print(TracingAvlTreeNode<T>* node, int& indent) {
 
     for (int i = 0; i < indent; i++) {
         std::cout << "    ";
@@ -149,7 +151,7 @@ void TracingAvlTreeNode<T>::print(TracingAvlTreeNode<T>* node, int &indent) {
 
 }
 
-template <class T>
+template<class T>
 void TracingAvlTreeNode<T>::destroy(TracingAvlTreeNode<T>* t) {
 
     if (t == nullptr) {
@@ -163,7 +165,7 @@ void TracingAvlTreeNode<T>::destroy(TracingAvlTreeNode<T>* t) {
 
 }
 
-template <class T>
+template<class T>
 TracingAvlTreeNode<T>* TracingAvlTreeNode<T>::insert(T x, TracingAvlTreeNode<T>* node) {
 
     if (node == nullptr) {
@@ -212,13 +214,17 @@ TracingAvlTreeNode<T>* TracingAvlTreeNode<T>::insert(T x, TracingAvlTreeNode<T>*
 
     }
 
-    node->mHeight = std::max(height(node->left), height(node->right)) + 1;
+    // node->mHeight = std::max(height(node->left), height(node->right)) + 1;
+    height_t lh = height(node->left);
+    height_t rh = height(node->right);
+
+    node->mHeight = (lh < rh ? rh : lh) + 1;
 
     return node;
 
 }
 
-template <class T>
+template<class T>
 TracingAvlTreeNode<T>* TracingAvlTreeNode<T>::singleRightRotate(TracingAvlTreeNode<T>*& node) {
 
     TracingAvlTreeNode<T>* leftNode = node->left;
@@ -233,7 +239,7 @@ TracingAvlTreeNode<T>* TracingAvlTreeNode<T>::singleRightRotate(TracingAvlTreeNo
 
 }
 
-template <class T>
+template<class T>
 TracingAvlTreeNode<T>* TracingAvlTreeNode<T>::singleLeftRotate(TracingAvlTreeNode<T>*& node) {
 
     TracingAvlTreeNode<T>* rightNode = node->right;
@@ -248,7 +254,7 @@ TracingAvlTreeNode<T>* TracingAvlTreeNode<T>::singleLeftRotate(TracingAvlTreeNod
 
 }
 
-template <class T>
+template<class T>
 TracingAvlTreeNode<T>* TracingAvlTreeNode<T>::doubleLeftRotate(TracingAvlTreeNode<T>*& node) {
 
     node->right = singleRightRotate(node->right);
@@ -257,7 +263,7 @@ TracingAvlTreeNode<T>* TracingAvlTreeNode<T>::doubleLeftRotate(TracingAvlTreeNod
 
 }
 
-template <class T>
+template<class T>
 TracingAvlTreeNode<T>* TracingAvlTreeNode<T>::doubleRightRotate(TracingAvlTreeNode<T>*& node) {
 
     node->left = singleLeftRotate(node->left);
@@ -266,7 +272,7 @@ TracingAvlTreeNode<T>* TracingAvlTreeNode<T>::doubleRightRotate(TracingAvlTreeNo
 
 }
 
-template <class T>
+template<class T>
 TracingAvlTreeNode<T>* TracingAvlTreeNode<T>::findMin(TracingAvlTreeNode<T>* node) {
     if (node == nullptr)
         return nullptr;
@@ -276,7 +282,7 @@ TracingAvlTreeNode<T>* TracingAvlTreeNode<T>::findMin(TracingAvlTreeNode<T>* nod
         return findMin(node->left);
 }
 
-template <class T>
+template<class T>
 TracingAvlTreeNode<T>* TracingAvlTreeNode<T>::findMax(TracingAvlTreeNode<T>* node) {
     if (node == nullptr)
         return nullptr;
@@ -286,8 +292,9 @@ TracingAvlTreeNode<T>* TracingAvlTreeNode<T>::findMax(TracingAvlTreeNode<T>* nod
         return findMax(node->right);
 }
 
-template <class T>
-TracingAvlTreeNode<T>* TracingAvlTreeNode<T>::findValue(TracingAvlTreeNode<T>* node, T& value, unsigned long& traceCompares) {
+template<class T>
+TracingAvlTreeNode<T>*
+TracingAvlTreeNode<T>::findValue(TracingAvlTreeNode<T>* node, T& value, unsigned long& traceCompares) {
 
     if (traceCompares++, value == node->data) {
         return node;
@@ -295,7 +302,7 @@ TracingAvlTreeNode<T>* TracingAvlTreeNode<T>::findValue(TracingAvlTreeNode<T>* n
 
     if (traceCompares++, value < node->data) {
 
-        return node->left == nullptr ? nullptr : findValue(node->left, value, traceCompares);
+        return traceCompares++, node->left == nullptr ? nullptr : findValue(node->left, value, traceCompares);
 
     }
 
@@ -303,7 +310,7 @@ TracingAvlTreeNode<T>* TracingAvlTreeNode<T>::findValue(TracingAvlTreeNode<T>* n
 
 }
 
-template <class T>
+template<class T>
 TracingAvlTreeNode<T>* TracingAvlTreeNode<T>::remove(T x, TracingAvlTreeNode<T>* node) {
 
     TracingAvlTreeNode<T>* temp;
@@ -370,14 +377,14 @@ TracingAvlTreeNode<T>* TracingAvlTreeNode<T>::remove(T x, TracingAvlTreeNode<T>*
 
 }
 
-template <class T>
+template<class T>
 height_t TracingAvlTreeNode<T>::height(TracingAvlTreeNode<T>* node) {
 
     return (node == nullptr ? -1 : node->mHeight);
 
 }
 
-template <class T>
+template<class T>
 height_t TracingAvlTreeNode<T>::getBalance(TracingAvlTreeNode<T>* node) {
 
     if (node == nullptr) {
@@ -391,7 +398,7 @@ height_t TracingAvlTreeNode<T>::getBalance(TracingAvlTreeNode<T>* node) {
 
 // TracingAvlTree implementation
 
-template <class T>
+template<class T>
 void TracingAvlTree<T>::insert(T value) {
 
     nodesCount++;
@@ -400,14 +407,14 @@ void TracingAvlTree<T>::insert(T value) {
 
 }
 
-template <class T>
+template<class T>
 void TracingAvlTree<T>::remove(T value) {
 
     root = TracingAvlTreeNode<T>::remove(value, root);
 
 }
 
-template <class T>
+template<class T>
 void TracingAvlTree<T>::print() {
 
     if (root == nullptr) {

@@ -3,4 +3,4 @@ project(rbavltrees)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(rbavltrees main.cpp AvlTree.hpp TracingAvlTree.hpp TracingRbTree.hpp)
+add_executable(rbavltrees main.cpp AvlTree.hpp TracingAvlTree.hpp TracingRbTree.hpp RbTree.hpp rb.hpp)

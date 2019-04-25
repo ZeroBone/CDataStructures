@@ -1,487 +1,923 @@
 #ifndef RBAVLTREES_RBTREE_HPP
 #define RBAVLTREES_RBTREE_HPP
 
+#include <iostream>
+#include <cstdio>
+#include <cstring>
+#include <algorithm>
+#include <cmath>
+#include <vector>
+#include <cstdlib>
+#include <cassert>
+#define INDENT_STEP  4
+
 using namespace std;
+enum color { RED, BLACK };
+/*
+ * Node RBTree Declaration
+ */
+typedef struct rbtree_node
+{
+    enum color color;
+    void *key;
+    void *value;
+    rbtree_node *left, *right, *parent;
+}*node;
 
-template <class T>
-class TracingRbTree;
+typedef struct rbtree_t {
+    node root;
+}*rbtree;
 
-template <class T>
-class TracingRbTreeNode {
-
-    friend class TracingRbTree<T>;
-
+/*
+ * Class RBTree Declaration
+ */
+class RBTree
+{
     public:
-
-    T key;
-
-    TracingRbTreeNode* parent;
-
-    private:
-
-    char color;
-
-    TracingRbTreeNode* left;
-    TracingRbTreeNode* right;
-
-
+    typedef int (*compare_func)(void* left, void* right);
+    rbtree rbtree_create();
+    void* rbtree_lookup(rbtree t, void* , compare_func compare);
+    void rbtree_insert(rbtree t, void* , void* , compare_func compare);
+    void rbtree_delete(rbtree t, void* , compare_func compare);
+    node grandparent(node n);
+    node sibling(node n);
+    node uncle(node n);
+    void verify_properties(rbtree t);
+    void verify_property_1(node root);
+    void verify_property_2(node root);
+    color node_color(node n);
+    void verify_property_4(node root);
+    void verify_property_5(node root);
+    void verify_property_5_helper(node n, int , int*);
+    node new_node(void* key, void* , color , node , node);
+    node lookup_node(rbtree t, void* , compare_func compare);
+    void rotate_left(rbtree t, node n);
+    void rotate_right(rbtree t, node n);
+    void replace_node(rbtree t, node oldn, node newn);
+    void insert_case1(rbtree t, node n);
+    void insert_case2(rbtree t, node n);
+    void insert_case3(rbtree t, node n);
+    void insert_case4(rbtree t, node n);
+    void insert_case5(rbtree t, node n);
+    node maximum_node(node root);
+    void delete_case1(rbtree t, node n);
+    void delete_case2(rbtree t, node n);
+    void delete_case3(rbtree t, node n);
+    void delete_case4(rbtree t, node n);
+    void delete_case5(rbtree t, node n);
+    void delete_case6(rbtree t, node n);
 };
+/*
+ * Return Grandparent of Node
+ */
+node RBTree::grandparent(node n)
+{
+    assert (n != nullptr);
+    assert (n->parent != nullptr);
+    assert (n->parent->parent != nullptr);
+    return n->parent->parent;
+}
 
-template <class T>
-class TracingRbTree {
+/*
+ * Return Sibling of Node
+ */
+node RBTree::sibling(node n)
+{
+    assert (n != nullptr);
+    assert (n->parent != nullptr);
+    if (n == n->parent->left)
+        return n->parent->right;
+    else
+        return n->parent->left;
+}
 
-    TracingRbTreeNode<T>* root;
+/*
+ * Return Uncle of Node
+ */
+node RBTree::uncle(node n)
+{
+    assert (n != nullptr);
+    assert (n->parent != nullptr);
+    assert (n->parent->parent != nullptr);
+    return sibling(n->parent);
+}
 
-    TracingRbTreeNode<T>* q;
-
-    public:
-
-    TracingRbTree() {
-        q = nullptr;
-        root = nullptr;
+/*
+ * Verifying Properties of Red black Tree
+ */
+void RBTree::verify_properties(rbtree t)
+{
+    verify_property_1 (t->root);
+    verify_property_2 (t->root);
+    verify_property_4 (t->root);
+    verify_property_5 (t->root);
+}
+/*
+ * Verifying Property 1
+ */
+void RBTree::verify_property_1(node n)
+{
+    assert (node_color(n) == RED || node_color(n) == BLACK);
+    if (n == nullptr)
+        return;
+    verify_property_1(n->left);
+    verify_property_1(n->right);
+}
+/*
+ * Verifying Property 2
+ */
+void RBTree::verify_property_2(node root)
+{
+    assert (node_color(root) == BLACK);
+}
+/*
+ * Returns color of a node
+ */
+color RBTree::node_color(node n)
+{
+    return n == nullptr ? BLACK : n->color;
+}
+/*
+ * Verifying Property 4
+ */
+void RBTree::verify_property_4(node n)
+{
+    if (node_color(n) == RED)
+    {
+        assert (node_color(n->left) == BLACK);
+        assert (node_color(n->right) == BLACK);
+        assert (node_color(n->parent) == BLACK);
     }
+    if (n == nullptr)
+        return;
+    verify_property_4(n->left);
+    verify_property_4(n->right);
+}
+/*
+ * Verifying Property 5
+ */
+void RBTree::verify_property_5(node root)
+{
+    int black_count_path = -1;
+    verify_property_5_helper(root, 0, &black_count_path);
+}
 
-    size_t getNodeSize() const {
-        return sizeof(TracingRbTreeNode<T>);
+void RBTree::verify_property_5_helper(node n, int black_count, int* path_black_count)
+{
+    if (node_color(n) == BLACK)
+    {
+        black_count++;
     }
-
-    void insert(T key);
-
-    bool remove(T key);
-
-    TracingRbTreeNode<T>* search(T key);
-
-    void disp();
-
-    private:
-
-    void insertfix(TracingRbTreeNode<T>*);
-
-    void leftrotate(TracingRbTreeNode<T>*);
-
-    void rightrotate(TracingRbTreeNode<T>*);
-
-    TracingRbTreeNode<T>* successor(TracingRbTreeNode<T>*);
-
-    void delfix(TracingRbTreeNode<T>*);
-
-    void display(TracingRbTreeNode<T>*);
-
-};
-
-template <class T>
-void TracingRbTree<T>::insert(T key) {
-
-    TracingRbTreeNode<T>* p, *q;
-
-    auto t = new TracingRbTreeNode<T>();
-
-    t->key = key;
-
-    t->left = nullptr;
-    t->right = nullptr;
-    t->color = 'r';
-
-    p = root;
-    q = nullptr;
-
-    if (root == nullptr) {
-        root = t;
-        t->parent = nullptr;
+    if (n == nullptr)
+    {
+        if (*path_black_count == -1)
+        {
+            *path_black_count = black_count;
+        }
+        else
+        {
+            assert (black_count == *path_black_count);
+        }
+        return;
     }
-    else {
+    verify_property_5_helper(n->left,  black_count, path_black_count);
+    verify_property_5_helper(n->right, black_count, path_black_count);
+}
 
-        while (p != nullptr) {
+/*
+ * Create Red Black Tree
+ */
+rbtree RBTree::rbtree_create()
+{
+    rbtree t = new rbtree_t;
+    t->root = nullptr;
+    verify_properties(t);
+    return t;
+}
 
-            q = p;
+/*
+ * Creating New Node of Reb Black Tree
+ */
+node RBTree::new_node(void* k, void* v, color n_color, node left, node right)
+{
+    node result = new rbtree_node;
+    result->key = k;
+    result->value = v;
+    result->color = n_color;
+    result->left = left;
+    result->right = right;
+    if (left  != nullptr)
+        left->parent = result;
+    if (right != nullptr)
+        right->parent = result;
+    result->parent = nullptr;
+    return result;
+}
+/*
+ * Look Up through Node
+ */
+node RBTree::lookup_node(rbtree t, void* key, compare_func compare)
+{
+    node n = t->root;
+    while (n != nullptr)
+    {
+        int comp_result = compare(key, n->key);
+        if (comp_result == 0)
+        {
+            return n;
+        }
+        else if (comp_result < 0)
+        {
+            n = n->left;
+        }
+        else
+        {
+            assert(comp_result > 0);
+            n = n->right;
+        }
+    }
+    return n;
+}
+/*
+ * RbTree Look Up
+ */
+void* RBTree::rbtree_lookup(rbtree t, void* key, compare_func compare)
+{
+    node n = lookup_node(t, key, compare);
+    return n == nullptr ? nullptr : n->value;
+}
 
-            if (p->key < t->key)
-                p = p->right;
+/*
+ * Rotate left
+ */
+void RBTree::rotate_left(rbtree t, node n)
+{
+    node r = n->right;
+    replace_node(t, n, r);
+    n->right = r->left;
+    if (r->left != nullptr)
+    {
+        r->left->parent = n;
+    }
+    r->left = n;
+    n->parent = r;
+}
+/*
+ * Rotate right
+ */
+void RBTree::rotate_right(rbtree t, node n)
+{
+    node L = n->left;
+    replace_node(t, n, L);
+    n->left = L->right;
+    if (L->right != nullptr)
+    {
+        L->right->parent = n;
+    }
+    L->right = n;
+    n->parent = L;
+}
+/*
+ * Replace a node
+ */
+void RBTree::replace_node(rbtree t, node oldn, node newn)
+{
+    if (oldn->parent == nullptr)
+    {
+        t->root = newn;
+    }
+    else
+    {
+        if (oldn == oldn->parent->left)
+            oldn->parent->left = newn;
+        else
+            oldn->parent->right = newn;
+    }
+    if (newn != nullptr)
+    {
+        newn->parent = oldn->parent;
+    }
+}
+/*
+ * Insert node into RBTree
+ */
+void RBTree::rbtree_insert(rbtree t, void* key, void* value, compare_func compare)
+{
+    node inserted_node = new_node(key, value, RED, nullptr, nullptr);
+    if (t->root == nullptr)
+    {
+        t->root = inserted_node;
+    }
+    else
+    {
+        node n = t->root;
+        while (1)
+        {
+            int comp_result = compare(key, n->key);
+            if (comp_result == 0)
+            {
+                n->value = value;
+                return;
+            }
+            else if (comp_result < 0)
+            {
+                if (n->left == nullptr)
+                {
+                    n->left = inserted_node;
+                    break;
+                }
+                else
+                {
+                    n = n->left;
+                }
+            }
             else
-                p = p->left;
+            {
+                assert (comp_result > 0);
+                if (n->right == nullptr)
+                {
+                    n->right = inserted_node;
+                    break;
+                }
+                else
+                {
+                    n = n->right;
+                }
+            }
         }
-
-        t->parent = q;
-
-        if (q->key < t->key)
-            q->right = t;
-        else
-            q->left = t;
-
+        inserted_node->parent = n;
     }
-
-    insertfix(t);
-
+    insert_case1(t, inserted_node);
+    verify_properties(t);
 }
 
-template <class T>
-void TracingRbTree<T>::insertfix(TracingRbTreeNode<T>* t) {
+/*
+ * Inserting Case 1
+ */
+void RBTree::insert_case1(rbtree t, node n)
+{
+    if (n->parent == nullptr)
+        n->color = BLACK;
+    else
+        insert_case2(t, n);
+}
 
-    TracingRbTreeNode<T>* u;
+/*
+ * Inserting Case 2
+ */
+void RBTree::insert_case2(rbtree t, node n)
+{
+    if (node_color(n->parent) == BLACK)
+        return;
+    else
+        insert_case3(t, n);
+}
 
-    if (root == t) {
-        t->color = 'b';
+/*
+ * Inserting Case 3
+ */
+void RBTree::insert_case3(rbtree t, node n)
+{
+    if (node_color(uncle(n)) == RED)
+    {
+        n->parent->color = BLACK;
+        uncle(n)->color = BLACK;
+        grandparent(n)->color = RED;
+        insert_case1(t, grandparent(n));
+    }
+    else
+    {
+        insert_case4(t, n);
+    }
+}
+
+/*
+ * Inserting Case 4
+ */
+void RBTree::insert_case4(rbtree t, node n)
+{
+    if (n == n->parent->right && n->parent == grandparent(n)->left)
+    {
+        rotate_left(t, n->parent);
+        n = n->left;
+    }
+    else if (n == n->parent->left && n->parent == grandparent(n)->right)
+    {
+        rotate_right(t, n->parent);
+        n = n->right;
+    }
+    insert_case5(t, n);
+}
+
+/*
+ * Inserting Case 5
+ */
+void RBTree::insert_case5(rbtree t, node n)
+{
+    n->parent->color = BLACK;
+    grandparent(n)->color = RED;
+    if (n == n->parent->left && n->parent == grandparent(n)->left)
+    {
+        rotate_right(t, grandparent(n));
+    }
+    else
+    {
+        assert (n == n->parent->right && n->parent == grandparent(n)->right);
+        rotate_left(t, grandparent(n));
+    }
+}
+
+/*
+ * Delete Node from RBTree
+ */
+void RBTree::rbtree_delete(rbtree t, void* key, compare_func compare)
+{
+    node child;
+    node n = lookup_node(t, key, compare);
+    if (n == nullptr)
+        return;
+    if (n->left != nullptr && n->right != nullptr)
+    {
+        node pred = maximum_node(n->left);
+        n->key   = pred->key;
+        n->value = pred->value;
+        n = pred;
+    }
+    assert(n->left == nullptr || n->right == nullptr);
+    child = n->right == nullptr ? n->left  : n->right;
+    if (node_color(n) == BLACK)
+    {
+        n->color = node_color(child);
+        delete_case1(t, n);
+    }
+    replace_node(t, n, child);
+    free(n);
+    verify_properties(t);
+}
+
+/*
+ * Returns Maximum node
+ */
+node RBTree::maximum_node(node n)
+{
+    assert (n != nullptr);
+    while (n->right != nullptr)
+    {
+        n = n->right;
+    }
+    return n;
+}
+
+/*
+ * Deleting Case 1
+ */
+void RBTree::delete_case1(rbtree t, node n)
+{
+    if (n->parent == nullptr)
+        return;
+    else
+        delete_case2(t, n);
+}
+
+/*
+ * Deleting Case 2
+ */
+void RBTree::delete_case2(rbtree t, node n)
+{
+    if (node_color(sibling(n)) == RED)
+    {
+        n->parent->color = RED;
+        sibling(n)->color = BLACK;
+        if (n == n->parent->left)
+            rotate_left(t, n->parent);
+        else
+            rotate_right(t, n->parent);
+    }
+    delete_case3(t, n);
+}
+
+/*
+ * Deleting Case 3
+ */
+void RBTree::delete_case3(rbtree t, node n)
+{
+    if (node_color(n->parent) == BLACK && node_color(sibling(n)) == BLACK &&
+        node_color(sibling(n)->left) == BLACK && node_color(sibling(n)->right) == BLACK)
+    {
+        sibling(n)->color = RED;
+        delete_case1(t, n->parent);
+    }
+    else
+        delete_case4(t, n);
+}
+
+/*
+ * Deleting Case 4
+ */
+void RBTree::delete_case4(rbtree t, node n)
+{
+    if (node_color(n->parent) == RED && node_color(sibling(n)) == BLACK &&
+        node_color(sibling(n)->left) == BLACK && node_color(sibling(n)->right) == BLACK)
+    {
+        sibling(n)->color = RED;
+        n->parent->color = BLACK;
+    }
+    else
+        delete_case5(t, n);
+}
+
+/*
+ * Deleting Case 5
+ */
+void RBTree::delete_case5(rbtree t, node n)
+{
+    if (n == n->parent->left && node_color(sibling(n)) == BLACK &&
+        node_color(sibling(n)->left) == RED && node_color(sibling(n)->right) == BLACK)
+    {
+        sibling(n)->color = RED;
+        sibling(n)->left->color = BLACK;
+        rotate_right(t, sibling(n));
+    }
+    else if (n == n->parent->right && node_color(sibling(n)) == BLACK &&
+             node_color(sibling(n)->right) == RED && node_color(sibling(n)->left) == BLACK)
+    {
+        sibling(n)->color = RED;
+        sibling(n)->right->color = BLACK;
+        rotate_left(t, sibling(n));
+    }
+    delete_case6(t, n);
+}
+
+/*
+ * Deleting Case 6
+ */
+void RBTree::delete_case6(rbtree t, node n)
+{
+    sibling(n)->color = node_color(n->parent);
+    n->parent->color = BLACK;
+    if (n == n->parent->left)
+    {
+        assert (node_color(sibling(n)->right) == RED);
+        sibling(n)->right->color = BLACK;
+        rotate_left(t, n->parent);
+    }
+    else
+    {
+        assert (node_color(sibling(n)->left) == RED);
+        sibling(n)->left->color = BLACK;
+        rotate_right(t, n->parent);
+    }
+}
+
+/*
+ * Compare two nodes
+ */
+int compare_int(void* leftp, void* rightp)
+{
+    int left = (int)leftp;
+    int right = (int)rightp;
+    if (left < right)
+        return -1;
+    else if (left > right)
+        return 1;
+    else
+    {
+        assert (left == right);
+        return 0;
+    }
+}
+/*
+ * Print RBTRee
+ */
+void print_tree_helper(node n, int indent)
+{
+    int i;
+    if (n == nullptr)
+    {
+        fputs("<empty tree>", stdout);
         return;
     }
-
-    while (t->parent != nullptr && t->parent->color == 'r') {
-
-        TracingRbTreeNode<T>* g = t->parent->parent;
-
-        if (g->left == t->parent) {
-
-            if (g->right != nullptr) {
-
-                u = g->right;
-
-                if (u->color == 'r') {
-                    t->parent->color = 'b';
-                    u->color = 'b';
-                    g->color = 'r';
-                    t = g;
-                }
-
-            }
-            else {
-
-                if (t->parent->right == t) {
-
-                    t = t->parent;
-                    leftrotate(t);
-
-                }
-
-                t->parent->color = 'b';
-                g->color = 'r';
-
-                rightrotate(g);
-
-            }
-
-        }
-        else {
-
-            if (g->left != nullptr) {
-
-                u = g->left;
-                if (u->color == 'r') {
-                    t->parent->color = 'b';
-                    u->color = 'b';
-                    g->color = 'r';
-                    t = g;
-                }
-            }
-            else {
-
-                if (t->parent->left == t) {
-                    t = t->parent;
-                    rightrotate(t);
-                }
-
-                t->parent->color = 'b';
-                g->color = 'r';
-
-                leftrotate(g);
-
-            }
-
-        }
-
-        root->color = 'b';
-
+    if (n->right != nullptr)
+    {
+        print_tree_helper(n->right, indent + INDENT_STEP);
     }
-
-}
-
-template <class T>
-bool TracingRbTree<T>::remove(T key) {
-
-    if (root == nullptr) {
-        // empty tree
-        return false;
-    }
-
-    TracingRbTreeNode<T>* p;
-
-    p = root;
-
-    TracingRbTreeNode<T>* y = nullptr;
-    TracingRbTreeNode<T>* q = nullptr;
-
-    while (p != nullptr) {
-
-        if (p->key == key) {
-
-            // delete p
-
-            if (p->left == nullptr || p->right == nullptr) {
-                y = p;
-            }
-            else {
-                y = successor(p);
-            }
-
-            if (y->left != nullptr) {
-                q = y->left;
-            }
-            else {
-                if (y->right != nullptr) {
-                    q = y->right;
-                }
-                else {
-                    q = nullptr;
-                }
-            }
-
-            if (q != nullptr) {
-                q->parent = y->parent;
-            }
-
-            if (y->parent == nullptr) {
-                root = q;
-            }
-            else {
-                if (y == y->parent->left) {
-                    y->parent->left = q;
-                }
-                else {
-                    y->parent->right = q;
-                }
-            }
-
-            if (y != p) {
-                p->color = y->color;
-                p->key = y->key;
-            }
-
-            if (y->color == 'b') {
-                delfix(q);
-            }
-
-            return true;
-
-        }
-
-        if (p->key < key) {
-            p = p->right;
-        }
-        else {
-            p = p->left;
-        }
-
-    }
-
-    return false;
-
-}
-
-template <class T>
-void TracingRbTree<T>::delfix(TracingRbTreeNode<T>* p) {
-
-    TracingRbTreeNode<T>* s;
-
-    while (p != root && p->color == 'b') {
-        if (p->parent->left == p) {
-            s = p->parent->right;
-            if (s->color == 'r') {
-                s->color = 'b';
-                p->parent->color = 'r';
-                leftrotate(p->parent);
-                s = p->parent->right;
-            }
-            if (s->right->color == 'b' && s->left->color == 'b') {
-                s->color = 'r';
-                p = p->parent;
-            }
-            else {
-                if (s->right->color == 'b') {
-                    s->left->color == 'b';
-                    s->color = 'r';
-                    rightrotate(s);
-                    s = p->parent->right;
-                }
-                s->color = p->parent->color;
-                p->parent->color = 'b';
-                s->right->color = 'b';
-                leftrotate(p->parent);
-                p = root;
-            }
-        }
-        else {
-            s = p->parent->left;
-            if (s->color == 'r') {
-                s->color = 'b';
-                p->parent->color = 'r';
-                rightrotate(p->parent);
-                s = p->parent->left;
-            }
-            if (s->left->color == 'b' && s->right->color == 'b') {
-                s->color = 'r';
-                p = p->parent;
-            }
-            else {
-                if (s->left->color == 'b') {
-                    s->right->color = 'b';
-                    s->color = 'r';
-                    leftrotate(s);
-                    s = p->parent->left;
-                }
-                s->color = p->parent->color;
-                p->parent->color = 'b';
-                s->left->color = 'b';
-                rightrotate(p->parent);
-                p = root;
-            }
-        }
-        p->color = 'b';
-        root->color = 'b';
+    for(i = 0; i < indent; i++)
+        fputs(" ", stdout);
+    if (n->color == BLACK)
+        cout<<(int)n->key<<endl;
+    else
+        cout<<"<"<<(int)n->key<<">"<<endl;
+    if (n->left != nullptr)
+    {
+        print_tree_helper(n->left, indent + INDENT_STEP);
     }
 }
 
-template <class T>
-void TracingRbTree<T>::leftrotate(TracingRbTreeNode<T>* p) {
-    if (p->right == nullptr)
-        return;
-    else {
-        TracingRbTreeNode<T>* y = p->right;
-        if (y->left != nullptr) {
-            p->right = y->left;
-            y->left->parent = p;
-        }
-        else
-            p->right = nullptr;
-        if (p->parent != nullptr)
-            y->parent = p->parent;
-        if (p->parent == nullptr)
-            root = y;
-        else {
-            if (p == p->parent->left)
-                p->parent->left = y;
-            else
-                p->parent->right = y;
-        }
-        y->left = p;
-        p->parent = y;
-    }
+void print_tree(rbtree t)
+{
+    print_tree_helper(t->root, 0);
+    puts("");
 }
 
-template <class T>
-void TracingRbTree<T>::rightrotate(TracingRbTreeNode<T>* p) {
-    if (p->left == nullptr)
-        return;
-    else {
-        TracingRbTreeNode<T>* y = p->left;
-        if (y->right != nullptr) {
-            p->left = y->right;
-            y->right->parent = p;
-        }
-        else
-            p->left = nullptr;
-        if (p->parent != nullptr)
-            y->parent = p->parent;
-        if (p->parent == nullptr)
-            root = y;
-        else {
-            if (p == p->parent->left)
-                p->parent->left = y;
-            else
-                p->parent->right = y;
-        }
-        y->right = p;
-        p->parent = y;
-    }
-}
-
-template <class T>
-TracingRbTreeNode<T>* TracingRbTree<T>::successor(TracingRbTreeNode<T>* p) {
-    TracingRbTreeNode<T>* y = nullptr;
-    if (p->left != nullptr) {
-        y = p->left;
-        while (y->right != nullptr)
-            y = y->right;
-    }
-    else {
-        y = p->right;
-        while (y->left != nullptr)
-            y = y->left;
-    }
-    return y;
-}
-
-template <class T>
-void TracingRbTree<T>::disp() {
-    display(root);
-}
-
-template <class T>
-void TracingRbTree<T>::display(TracingRbTreeNode<T>* p) {
-    if (root == nullptr) {
-        cout << "\nEmpty Tree.";
-        return;
-    }
-    if (p != nullptr) {
-        cout << "\n\t NODE: ";
-        cout << "\n Key: " << p->key;
-        cout << "\n Colour: ";
-        if (p->color == 'b')
-            cout << "Black";
-        else
-            cout << "Red";
-        if (p->parent != nullptr)
-            cout << "\n Parent: " << p->parent->key;
-        else
-            cout << "\n There is no parent of the node.  ";
-        if (p->right != nullptr)
-            cout << "\n Right Child: " << p->right->key;
-        else
-            cout << "\n There is no right child of the node.  ";
-        if (p->left != nullptr)
-            cout << "\n Left Child: " << p->left->key;
-        else
-            cout << "\n There is no left child of the node.  ";
-        cout << endl;
-        if (p->left) {
-            cout << "\n\nLeft:\n";
-            display(p->left);
-        }
-        /*else
-         cout<<"\nNo Left Child.\n";*/
-        if (p->right) {
-            cout << "\n\nRight:\n";
-            display(p->right);
-        }
-        /*else
-         cout<<"\nNo Right Child.\n"*/
-    }
-}
-
-template <class T>
-TracingRbTreeNode<T>* TracingRbTree<T>::search(T key) {
-
-    if (root == nullptr) {
-        // empty tree
-        return nullptr;
-    }
-
-    TracingRbTreeNode<T>* p = root;
-
-    while (p != nullptr) {
-
-        if (p->key == key) {
-            return p;
-        }
-
-        if (p->key < key) {
-            p = p->right;
-        }
-        else {
-            p = p->left;
-        }
-
-    }
-
-    return nullptr;
-
-}
+//#include <queue>
+//
+//using namespace std;
+//
+//template<class T>
+//class TracingRbTree;
+//
+//enum Color {
+//    RED, BLACK
+//};
+//
+//template <class T>
+//class TracingRbTreeNode {
+//
+//    friend class TracingRbTree<T>;
+//
+//    public:
+//
+//    T data;
+//
+//    private:
+//
+//    bool color;
+//
+//    TracingRbTreeNode* left;
+//    TracingRbTreeNode* right;
+//
+//    public:
+//    TracingRbTreeNode* parent;
+//
+//    private:
+//
+//    // Constructor
+//    explicit TracingRbTreeNode(T data) {
+//
+//        this->data = data;
+//
+//        left = right = parent = nullptr;
+//
+//    }
+//
+//};
+//
+//template<class T>
+//class TracingRbTree {
+//
+//    private:
+//    TracingRbTreeNode<T>* root;
+//
+//    protected:
+//
+//    void rotateLeft(TracingRbTreeNode<T>*&, TracingRbTreeNode<T>*&);
+//
+//    void rotateRight(TracingRbTreeNode<T>*&, TracingRbTreeNode<T>*&);
+//
+//    void fixViolation(TracingRbTreeNode<T>*&, TracingRbTreeNode<T>*&);
+//
+//    public:
+//    // Constructor
+//    TracingRbTree() { root = nullptr; }
+//
+//    void insert(const T& data);
+//
+//    void inorder();
+//
+//    void levelOrder();
+//
+//    private:
+//
+//    // A recursive function to do level order traversal
+//    static void inorderHelper(TracingRbTreeNode<T>* root) {
+//
+//        if (root->left != nullptr) {
+//            inorderHelper(root->left);
+//        }
+//
+//        cout << root->data << "  ";
+//
+//        if (root->right != nullptr) {
+//            inorderHelper(root->right);
+//        }
+//
+//    }
+//
+//    /* A utility function to insert a new node with given key
+//   in BST */
+//    static TracingRbTreeNode<T>* BSTInsert(TracingRbTreeNode<T>* root, TracingRbTreeNode<T>* pt) {
+//        /* If the tree is empty, return a new node */
+//        if (root == nullptr)
+//            return pt;
+//
+//        /* Otherwise, recur down the tree */
+//        if (pt->data < root->data) {
+//            root->left = BSTInsert(root->left, pt);
+//            root->left->parent = root;
+//        }
+//        else if (pt->data > root->data) {
+//            root->right = BSTInsert(root->right, pt);
+//            root->right->parent = root;
+//        }
+//
+//        /* return the (unchanged) node pointer */
+//        return root;
+//    }
+//
+//    // Utility function to do level order traversal
+//    static void levelOrderHelper(TracingRbTreeNode<T>* root) {
+//
+//        if (root == nullptr) {
+//            return;
+//        }
+//
+//        std::queue<TracingRbTreeNode<T>*> q;
+//        q.push(root);
+//
+//        while (!q.empty()) {
+//            TracingRbTreeNode<T>* temp = q.front();
+//            cout << temp->data << "  ";
+//            q.pop();
+//
+//            if (temp->left != nullptr) {
+//                q.push(temp->left);
+//            }
+//
+//            if (temp->right != nullptr) {
+//                q.push(temp->right);
+//            }
+//
+//        }
+//
+//    }
+//
+//};
+//
+//template <class T>
+//void TracingRbTree<T>::rotateLeft(TracingRbTreeNode<T>*& root, TracingRbTreeNode<T>*& pt) {
+//
+//    TracingRbTreeNode<T>* pt_right = pt->right;
+//
+//    pt->right = pt_right->left;
+//
+//    if (pt->right != nullptr) {
+//        pt->right->parent = pt;
+//    }
+//
+//    pt_right->parent = pt->parent;
+//
+//    if (pt->parent == nullptr) {
+//        root = pt_right;
+//    }
+//    else if (pt == pt->parent->left) {
+//        pt->parent->left = pt_right;
+//    }
+//    else {
+//        pt->parent->right = pt_right;
+//    }
+//
+//    pt_right->left = pt;
+//    pt->parent = pt_right;
+//
+//}
+//
+//template <class T>
+//void TracingRbTree<T>::rotateRight(TracingRbTreeNode<T>*& root, TracingRbTreeNode<T>*& pt) {
+//
+//    TracingRbTreeNode<T>* pt_left = pt->left;
+//
+//    pt->left = pt_left->right;
+//
+//    if (pt->left != nullptr)
+//        pt->left->parent = pt;
+//
+//    pt_left->parent = pt->parent;
+//
+//    if (pt->parent == nullptr)
+//        root = pt_left;
+//    else if (pt == pt->parent->left)
+//        pt->parent->left = pt_left;
+//    else
+//        pt->parent->right = pt_left;
+//
+//    pt_left->right = pt;
+//    pt->parent = pt_left;
+//
+//}
+//
+//template <class T>
+//void TracingRbTree<T>::fixViolation(TracingRbTreeNode<T>*& root, TracingRbTreeNode<T>*& pt) {
+//
+//    TracingRbTreeNode<T>* parent_pt = nullptr;
+//    TracingRbTreeNode<T>* grand_parent_pt = nullptr;
+//
+//    while ((pt != root) && (pt->color != BLACK) &&
+//           (pt->parent->color == RED)) {
+//
+//        parent_pt = pt->parent;
+//        grand_parent_pt = pt->parent->parent;
+//
+//        /*  Case : A
+//            Parent of pt is left child of Grand-parent of pt */
+//        if (parent_pt == grand_parent_pt->left) {
+//
+//            TracingRbTreeNode<T>* uncle_pt = grand_parent_pt->right;
+//
+//            /* Case : 1
+//               The uncle of pt is also red
+//               Only Recoloring required */
+//
+//            if (uncle_pt != nullptr && uncle_pt->color == RED) {
+//
+//                grand_parent_pt->color = RED;
+//
+//                parent_pt->color = BLACK;
+//                uncle_pt->color = BLACK;
+//
+//                pt = grand_parent_pt;
+//
+//            }
+//            else {
+//
+//                /* Case : 2
+//                   pt is right child of its parent
+//                   Left-rotation required */
+//
+//                if (pt == parent_pt->right) {
+//                    rotateLeft(root, parent_pt);
+//                    pt = parent_pt;
+//                    parent_pt = pt->parent;
+//                }
+//
+//                /* Case : 3
+//                   pt is left child of its parent
+//                   Right-rotation required */
+//                rotateRight(root, grand_parent_pt);
+//                swap(parent_pt->color, grand_parent_pt->color);
+//                pt = parent_pt;
+//
+//            }
+//
+//        }
+//
+//            /* Case : B
+//               Parent of pt is right child of Grand-parent of pt */
+//        else {
+//            TracingRbTreeNode<T>* uncle_pt = grand_parent_pt->left;
+//
+//            /*  Case : 1
+//                The uncle of pt is also red
+//                Only Recoloring required */
+//            if ((uncle_pt != nullptr) && (uncle_pt->color == RED)) {
+//                grand_parent_pt->color = RED;
+//                parent_pt->color = BLACK;
+//                uncle_pt->color = BLACK;
+//                pt = grand_parent_pt;
+//            }
+//            else {
+//                /* Case : 2
+//                   pt is left child of its parent
+//                   Right-rotation required */
+//                if (pt == parent_pt->left) {
+//                    rotateRight(root, parent_pt);
+//                    pt = parent_pt;
+//                    parent_pt = pt->parent;
+//                }
+//
+//                /* Case : 3
+//                   pt is right child of its parent
+//                   Left-rotation required */
+//                rotateLeft(root, grand_parent_pt);
+//                swap(parent_pt->color, grand_parent_pt->color);
+//                pt = parent_pt;
+//            }
+//
+//        }
+//
+//    }
+//
+//    root->color = BLACK;
+//}
+//
+//// Function to insert a new node with given data
+//template <class T>
+//void TracingRbTree<T>::insert(const T& data) {
+//
+//    auto pt = new TracingRbTreeNode<T>(data);
+//
+//    // Do a normal BST insert
+//    root = TracingRbTree<T>::BSTInsert(root, pt);
+//
+//    // fix Red Black Tree violations
+//    fixViolation(root, pt);
+//
+//}
+//
+//// Function to do inorder and level order traversals
+//template <class T>
+//void TracingRbTree<T>::inorder() { inorderHelper(root); }
+//
+//template <class T>
+//void TracingRbTree<T>::levelOrder() { levelOrderHelper(root); }
 
 #endif //RBAVLTREES_RBTREE_HPP
