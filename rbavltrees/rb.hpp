@@ -19,7 +19,7 @@ struct node NIL;
 NODEPTR NILPTR = &NIL;
 
 NODEPTR searchCountCompares(NODEPTR root, int k, int* compares) {
-    if (((*compares)++, root == NILPTR) || ((*compares)++, root->key == k))
+    if ((root == NILPTR) || ((*compares)++, root->key == k))
         return root;
     if ((*compares)++, k < root->key)
         return searchCountCompares(root->left, k, compares);

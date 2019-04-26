@@ -385,10 +385,10 @@ RBTreeNode<Comparable>* RedBlackTree<Comparable>::find(RBTreeNode<Comparable>* n
     }
 
     if (compares++, node->value < key) {
-        return compares++, node->lChildPtr == nullptr ? nullptr : find(node->lChildPtr, key, compares);
+        return node->lChildPtr == nullptr ? nullptr : find(node->lChildPtr, key, compares);
     }
 
-    return compares++, node->rChildPtr == nullptr ? nullptr : find(node->rChildPtr, key, compares);
+    return node->rChildPtr == nullptr ? nullptr : find(node->rChildPtr, key, compares);
 
 }
 

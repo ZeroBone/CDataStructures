@@ -5,6 +5,10 @@
 
 typedef char height_t;
 
+height_t maxHeight(height_t a, height_t b) {
+    return a < b ? b : a;
+}
+
 template<class T>
 class TracingAvlTree;
 
@@ -215,10 +219,11 @@ TracingAvlTreeNode<T>* TracingAvlTreeNode<T>::insert(T x, TracingAvlTreeNode<T>*
     }
 
     // node->mHeight = std::max(height(node->left), height(node->right)) + 1;
-    height_t lh = height(node->left);
-    height_t rh = height(node->right);
+    // height_t lh = height(node->left);
+    // height_t rh = height(node->right);
 
-    node->mHeight = (lh < rh ? rh : lh) + 1;
+    // node->mHeight = (lh < rh ? rh : lh) + 1;
+    node->mHeight = maxHeight(height(node->left), height(node->right)) + (height_t)1;
 
     return node;
 
@@ -232,8 +237,8 @@ TracingAvlTreeNode<T>* TracingAvlTreeNode<T>::singleRightRotate(TracingAvlTreeNo
     node->left = leftNode->right;
     leftNode->right = node;
 
-    node->mHeight = std::max(height(node->left), height(node->right)) + 1;
-    leftNode->mHeight = std::max(height(leftNode->left), node->mHeight) + 1;
+    node->mHeight = maxHeight(height(node->left), height(node->right)) + (height_t)1;
+    leftNode->mHeight = maxHeight(height(leftNode->left), node->mHeight) + (height_t)1;
 
     return leftNode;
 
@@ -247,8 +252,8 @@ TracingAvlTreeNode<T>* TracingAvlTreeNode<T>::singleLeftRotate(TracingAvlTreeNod
     node->right = rightNode->left;
     rightNode->left = node;
 
-    node->mHeight = std::max(height(node->left), height(node->right)) + 1;
-    rightNode->mHeight = std::max(height(node->right), node->mHeight) + 1;
+    node->mHeight = maxHeight(height(node->left), height(node->right)) + (height_t)1;
+    rightNode->mHeight = maxHeight(height(node->right), node->mHeight) + (height_t)1;
 
     return rightNode;
 
@@ -302,11 +307,11 @@ TracingAvlTreeNode<T>::findValue(TracingAvlTreeNode<T>* node, T& value, unsigned
 
     if (traceCompares++, value < node->data) {
 
-        return traceCompares++, node->left == nullptr ? nullptr : findValue(node->left, value, traceCompares);
+        return node->left == nullptr ? nullptr : findValue(node->left, value, traceCompares);
 
     }
 
-    return traceCompares++, node->right == nullptr ? nullptr : findValue(node->right, value, traceCompares);
+    return node->right == nullptr ? nullptr : findValue(node->right, value, traceCompares);
 
 }
 
@@ -351,7 +356,7 @@ TracingAvlTreeNode<T>* TracingAvlTreeNode<T>::remove(T x, TracingAvlTreeNode<T>*
         return node;
     }
 
-    node->mHeight = std::max(height(node->left), height(node->right)) + 1;
+    node->mHeight = maxHeight(height(node->left), height(node->right)) + (height_t)1;
 
     // If node is unbalanced
     // If left node is deleted, right case
